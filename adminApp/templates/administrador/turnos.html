@@ -1,0 +1,77 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - Turnos{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">Turnos y salas</h2>
+
+{% if sin_datos %}
+<div class="alert alert-warning">
+  No se pudo cargar la información de turnos. Verifica que el archivo
+  <code>turnos.json</code> exista y tenga un formato válido.
+</div>
+{% endif %}
+
+<p class="mb-4">
+  <span class="badge badge-libre">{{ total_turnos }} terapeutas con turno asignado</span>
+  <span class="badge badge-activo ms-2">{{ total_activos }} en turno activo</span>
+</p>
+
+<div class="table-responsive">
+  <table class="table table-spa align-middle">
+    <thead>
+      <tr>
+        <th>Terapeuta</th>
+        <th>Sala</th>
+        <th>Turno</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for turno in turnos %}
+      <tr>
+        <td>{{ turno.terapeuta }}</td>
+        <td>{{ turno.sala }}</td>
+        <td>{{ turno.turno }}</td>
+        <td>
+          {% if turno.estado == 'Activo' %}
+          <span class="badge badge-activo">{{ turno.estado }}</span>
+          {% else %}
+          <span class="badge badge-libre">{{ turno.estado }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center text-muted">No hay turnos registrados.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="row g-4 mt-3">
+  <div class="col-md-6">
+    <div class="card card-spa h-100">
+      <img src="{% static 'images/espacio_masaje.jpg' %}" class="w-100"
+           style="height:160px;object-fit:cover;" alt="Sala de masajes">
+      <div class="card-body">
+        <h5 class="mb-2">Distribución de salas</h5>
+        <p class="text-muted small mb-0">
+          Cada terapeuta tiene asignada una sala y un horario de turno.
+          Los turnos "Libre" quedan disponibles para reasignar citas de último minuto.
+        </p>
+        {% if info_imagen %}
+        <p class="text-muted small mt-2 mb-0">
+          <em>Imagen: {{ info_imagen.ancho }}×{{ info_imagen.alto }} px ·
+          {{ info_imagen.formato }} · {{ info_imagen.peso_kb }} KB</em>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

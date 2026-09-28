@@ -1,0 +1,136 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - Resumen{% endblock %}
+
+{% block panel_contenido %}
+
+<style>
+  /* barras simple para las citas por dia de la semana. */
+  .grafico-citas {
+    height: 160px;
+    gap: 0.5rem;
+  }
+  .barra-columna {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+  }
+  .barra-visual {
+    width: 100%;
+    max-width: 34px;
+    background-color: var(--color-verde-bosque);
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    height: calc(var(--altura, 0) * 1%);
+    transition: height 0.3s ease;
+  }
+</style>
+
+<h2 class="mb-4">Resumen general</h2>
+
+{% if sin_datos %}
+<div class="alert alert-warning">
+  No se pudo cargar la información de resumen o de citas. Verifica que los archivos
+  <code>resumen.json</code> y <code>citas.json</code> existan y tengan un formato válido.
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-1">
+      <p class="mb-1 small">Terapeutas activos</p>
+      <p class="fs-3 fw-bold mb-0">{{ resumen.terapeutas_activos }}</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-2">
+      <p class="mb-1 small">Salas en uso</p>
+      <p class="fs-3 fw-bold mb-0">{{ resumen.salas_en_uso }}</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-3">
+      <p class="mb-1 small">Citas de hoy</p>
+      <p class="fs-3 fw-bold mb-0">{{ resumen.citas_hoy }}</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-4">
+      <p class="mb-1 small">Ingresos del día</p>
+      <p class="fs-3 fw-bold mb-0">${{ resumen.ingresos_dia }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-5">
+    <div class="card card-spa h-100">
+      <img src="{% static 'images/espacio_recepcion.jpg' %}" class="w-100"
+           style="height:180px;object-fit:cover;" alt="Recepción del spa">
+      <div class="card-body">
+        <h5 class="mb-2">Control de recepción</h5>
+        <p class="text-muted small mb-0">
+          Desde este panel el administrador supervisa la operación diaria del spa:
+          citas agendadas, ocupación de salas y desempeño general del equipo.
+        </p>
+        {% if info_imagen %}
+        <p class="text-muted small mt-2 mb-0">
+          <em>Imagen: {{ info_imagen.ancho }}×{{ info_imagen.alto }} px ·
+          {{ info_imagen.formato }} · {{ info_imagen.peso_kb }} KB</em>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card card-spa p-3 h-100">
+      <h5 class="mb-3">Citas por día de la semana</h5>
+      <div class="d-flex align-items-end justify-content-between grafico-citas">
+        {% for barra in grafico_citas %}
+        <div class="barra-columna text-center">
+          <div class="barra-valor small fw-bold mb-1">{{ barra.cantidad }}</div>
+          <div class="barra-visual" style="--altura: {{ barra.porcentaje|default:0 }};"></div>
+          <div class="barra-etiqueta small text-muted mt-1">{{ barra.dia|slice:":3" }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<h4 class="mb-3">Citas agendadas</h4>
+<div class="table-responsive">
+  <table class="table table-spa align-middle">
+    <thead>
+      <tr>
+        <th>Día</th>
+        <th>Hora</th>
+        <th>Terapia</th>
+        <th>Cliente</th>
+        <th>Sala</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cita in citas %}
+      <tr>
+        <td>{{ cita.dia }}</td>
+        <td>{{ cita.hora }}</td>
+        <td>{{ cita.terapia }}</td>
+        <td>{{ cita.cliente }}</td>
+        <td>{{ cita.sala }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center text-muted">No hay citas registradas.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

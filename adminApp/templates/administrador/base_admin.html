@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<style>
+  /* estilo del administrador (adminApp).*/
+
+  .panel-admin-header {
+    background-color: var(--color-olivo-claro);
+    color: #ffffff;
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .panel-admin-header .info-admin {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .icono-admin {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    color: var(--color-olivo-claro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: bold;
+    border: 2px solid #ffffff;
+  }
+  .panel-admin-header .titulo-admin {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-admin {
+    background-color: var(--color-beige-calido);
+    padding: 1.25rem 0;
+  }
+  .sidebar-admin .titulo-menu {
+    font-weight: bold;
+    color: var(--color-grafito);
+    padding: 0 1.25rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+  }
+  .sidebar-admin a {
+    display: block;
+    padding: 0.65rem 1.25rem;
+    color: var(--color-grafito);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s ease;
+  }
+  .sidebar-admin a:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+  .sidebar-admin a.activo {
+    background-color: #ffffff;
+    border-left-color: var(--color-olivo-claro);
+    font-weight: 600;
+  }
+</style>
+
+<div class="d-flex flex-column flex-grow-1">
+
+  <div class="panel-admin-header">
+    <div class="info-admin">
+      <span class="icono-admin">A</span>
+      <p class="titulo-admin">Panel de Administración</p>
+    </div>
+
+    <a href="{% url 'main' %}" class="btn btn-spa-secondary btn-sm">Cerrar sesión</a>
+  </div>
+
+  <div class="container-fluid flex-grow-1 d-flex flex-column">
+    <div class="row flex-grow-1">
+
+      <div class="col-md-3 col-lg-2 p-0 sidebar-admin">
+        <a href="{% url 'panel_admin' %}"
+           class="{% if seccion_activa == 'panel' %}activo{% endif %}">
+          Resumen general
+        </a>
+        <a href="{% url 'turnos_admin' %}"
+           class="{% if seccion_activa == 'turnos' %}activo{% endif %}">
+          Turnos y salas
+        </a>
+        <a href="{% url 'clientes_admin' %}"
+           class="{% if seccion_activa == 'clientes' %}activo{% endif %}">
+          Ficha de clientes
+        </a>
+        <a href="{% url 'perfil_admin' %}"
+           class="{% if seccion_activa == 'perfil' %}activo{% endif %}">
+          Mi perfil
+        </a>
+      </div>
+
+      <div class="col-md-9 col-lg-10 py-4">
+        {% block panel_contenido %}{% endblock %}
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

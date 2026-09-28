@@ -1,0 +1,99 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - Ficha de clientes{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">Ficha de clientes</h2>
+
+{% if sin_datos %}
+<div class="alert alert-warning">
+  No se pudo cargar la información de clientes. Verifica que el archivo
+  <code>clientes.json</code> exista y tenga un formato válido.
+</div>
+{% endif %}
+
+<p class="mb-4">
+  <span class="badge badge-libre">{{ total_clientes }} clientes registrados</span>
+  <span class="badge badge-activo ms-2">{{ total_frecuentes }} clientes frecuentes</span>
+</p>
+
+<div class="mb-3" style="max-width: 320px;">
+  <input type="text" id="buscador-clientes" class="form-control"
+         placeholder="Buscar por nombre de cliente...">
+</div>
+
+<div class="table-responsive">
+  <table class="table table-spa align-middle" id="tabla-clientes">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Teléfono</th>
+        <th>Correo</th>
+        <th>Terapia favorita</th>
+        <th>Visitas</th>
+        <th>Última visita</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cliente in clientes %}
+      <tr class="fila-cliente">
+        <td>{{ cliente.nombre }}</td>
+        <td>{{ cliente.telefono }}</td>
+        <td>{{ cliente.correo }}</td>
+        <td>{{ cliente.terapia_favorita }}</td>
+        <td>{{ cliente.visitas }}</td>
+        <td>{{ cliente.ultima_visita }}</td>
+        <td>
+          {% if cliente.estado == 'Frecuente' %}
+          <span class="badge badge-activo">{{ cliente.estado }}</span>
+          {% elif cliente.estado == 'Nuevo' %}
+          <span class="badge badge-libre">{{ cliente.estado }}</span>
+          {% else %}
+          <span class="badge bg-danger">{{ cliente.estado }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="text-center text-muted">No hay clientes registrados.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p id="sin-resultados" class="text-muted text-center d-none">
+    Ningún cliente coincide con la búsqueda.
+  </p>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var buscador = document.getElementById('buscador-clientes');
+    var filas = document.querySelectorAll('#tabla-clientes .fila-cliente');
+    var mensajeVacio = document.getElementById('sin-resultados');
+
+    if (!buscador) {
+      return;
+    }
+
+    buscador.addEventListener('input', function () {
+      var texto = buscador.value.trim().toLowerCase();
+      var visibles = 0;
+
+      filas.forEach(function (fila) {
+        var nombre = fila.children[0].textContent.toLowerCase();
+        var coincide = nombre.includes(texto);
+        fila.classList.toggle('d-none', !coincide);
+        if (coincide) {
+          visibles += 1;
+        }
+      });
+
+      mensajeVacio.classList.toggle('d-none', visibles !== 0);
+    });
+  });
+</script>
+
+{% endblock %}

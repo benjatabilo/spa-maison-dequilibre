@@ -1,0 +1,12 @@
+{
+  "dias": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
+  "horarios": ["09:00", "10:30", "12:00", "14:00", "15:30"],
+  "citas": [
+    {"dia": "Lunes", "hora": "09:00", "cliente": "Andrea Muñoz", "terapia": "Masaje descontracturante", "sala": "Sala 1", "estado": "Confirmada"},
+    {"dia": "Lunes", "hora": "12:00", "cliente": "Felipe Rojas", "terapia": "Piedras calientes", "sala": "Sala 1", "estado": "Confirmada"},
+    {"dia": "Martes", "hora": "10:30", "cliente": "Constanza Díaz", "terapia": "Aromaterapia", "sala": "Sala 2", "estado": "Pendiente"},
+    {"dia": "Miércoles", "hora": "09:00", "cliente": "Ignacio Vera", "terapia": "Masaje facial", "sala": "Sala 1", "estado": "Confirmada"},
+    {"dia": "Jueves", "hora": "15:30", "cliente": "Valentina Soto", "terapia": "Masaje descontracturante", "sala": "Sala 3", "estado": "Pendiente"},
+    {"dia": "Viernes", "hora": "14:00", "cliente": "Rodrigo Pino", "terapia": "Masaje facial", "sala": "Sala 2", "estado": "Confirmada"}
+  ]
+}

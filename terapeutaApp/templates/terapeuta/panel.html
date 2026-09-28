@@ -1,0 +1,96 @@
+{% extends 'terapeuta/base_terapeuta.html' %}
+{% load static %}
+
+{% block titulo %}Panel Terapeuta - Rendimiento{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">Mi rendimiento</h2>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-1">
+      <p class="mb-1 small">Citas este mes</p>
+      <p class="fs-3 fw-bold mb-0">{{ rendimiento.citas_mes }}</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-2">
+      <p class="mb-1 small">Calificación</p>
+      <p class="fs-3 fw-bold mb-0">{{ rendimiento.calificacion }} / 5</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-3">
+      <p class="mb-1 small">Horas trabajadas</p>
+      <p class="fs-3 fw-bold mb-0">{{ rendimiento.horas_trabajadas }}</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card tono-4">
+      <p class="mb-1 small">Citas pendientes</p>
+      <p class="fs-3 fw-bold mb-0">{{ total_pendientes }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card card-spa p-3 h-100">
+      <h5 class="mb-3">Terapias más realizadas</h5>
+      <ul class="list-unstyled mb-0">
+        {% for terapia in rendimiento.terapias_top %}
+        <li class="mb-2">
+          <strong>{{ terapia.nombre }}</strong>
+          <span class="text-muted">— {{ terapia.veces }} veces</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card card-spa p-3 h-100">
+      <h5 class="mb-3">Resumen de la semana</h5>
+      <p class="mb-1"><strong>Total de citas:</strong> {{ total_citas_semana }}</p>
+      <p class="mb-1"><strong>Confirmadas:</strong> {{ total_confirmadas }}</p>
+      <p class="mb-0"><strong>Pendientes:</strong> {{ total_pendientes }}</p>
+    </div>
+  </div>
+</div>
+
+<h4 class="mt-5 mb-3">Calendario de citas</h4>
+<div class="table-responsive">
+  <table class="table table-spa align-middle">
+    <thead>
+      <tr>
+        <th>Hora</th>
+        {% for dia in dias %}
+        <th>{{ dia }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for fila in grilla %}
+      <tr>
+        <th scope="row">{{ fila.hora }}</th>
+        {% for slot in fila.slots %}
+        <td class="{% if slot.ocupado %}ocupado{% endif %}">
+          {% if slot.ocupado %}
+          <span class="badge {% if slot.cita.estado == 'Confirmada' %}badge-activo{% else %}badge-libre{% endif %}">
+            {{ slot.cita.estado }}
+          </span>
+          <div class="small">{{ slot.cita.cliente }}</div>
+          <div class="small">{{ slot.cita.terapia }}</div>
+          {% else %}
+          <span class="text-muted small">Libre</span>
+          {% endif %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

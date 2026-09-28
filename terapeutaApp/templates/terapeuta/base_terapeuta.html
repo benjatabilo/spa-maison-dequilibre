@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<style>
+  /* Estilos propios del panel del funcionario (terapeutaApp).
+     Viven aqui para no tocar el custom.css compartido con el resto del equipo. */
+
+  .panel-terapeuta-header {
+    background-color: var(--color-verde-bosque);
+    color: #ffffff;
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .panel-terapeuta-header .info-terapeuta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .foto-terapeuta {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid #ffffff;
+  }
+  .foto-terapeuta img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .panel-terapeuta-header .nombre-terapeuta {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-terapeuta {
+    width: 100%;
+    background-color: var(--color-beige-calido);
+    padding: 1.25rem 0;
+    min-height: 100%;
+  }
+  .sidebar-terapeuta .titulo-menu {
+    font-weight: bold;
+    color: var(--color-grafito);
+    padding: 0 1.25rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+  }
+  .sidebar-terapeuta a {
+    display: block;
+    padding: 0.65rem 1.25rem;
+    color: var(--color-grafito);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s ease;
+  }
+  .sidebar-terapeuta a:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+  .sidebar-terapeuta a.activo {
+    background-color: #ffffff;
+    border-left-color: var(--color-verde-bosque);
+    font-weight: 600;
+  }
+</style>
+
+<div class="panel-terapeuta-header">
+  <div class="info-terapeuta">
+    <span class="foto-terapeuta">
+      <img src="{% static perfil.foto %}" alt="{{ perfil.nombre }}">
+    </span>
+    <p class="nombre-terapeuta">{{ perfil.nombre }}</p>
+  </div>
+
+  <a href="{% url 'main' %}" class="btn btn-spa-secondary btn-sm">Cerrar sesión</a>
+</div>
+
+<div class="container-fluid">
+  <div class="row">
+
+    <div class="col-md-3 col-lg-2 p-0">
+      <div class="sidebar-terapeuta">
+        <p class="titulo-menu">Menú del funcionario</p>
+        <a href="{% url 'rendimiento_terapeuta' %}"
+           class="{% if seccion_activa == 'rendimiento' %}activo{% endif %}">
+          Rendimiento y citas
+        </a>
+        <a href="{% url 'perfil_terapeuta' %}"
+           class="{% if seccion_activa == 'perfil' %}activo{% endif %}">
+          Perfil e inventario
+        </a>
+      </div>
+    </div>
+
+    <div class="col-md-9 col-lg-10 py-4">
+      {% block panel_contenido %}{% endblock %}
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

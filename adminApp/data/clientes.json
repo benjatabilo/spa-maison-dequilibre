@@ -1,0 +1,8 @@
+[
+  {"nombre": "Andrea Muñoz", "telefono": "+56 9 1234 5678", "correo": "andrea.munoz@gmail.com", "terapia_favorita": "Masaje descontracturante", "visitas": 12, "ultima_visita": "24-08-2026", "estado": "Frecuente"},
+  {"nombre": "Felipe Rojas", "telefono": "+56 9 2345 6789", "correo": "felipe.rojas@gmail.com", "terapia_favorita": "Piedras calientes", "visitas": 7, "ultima_visita": "22-08-2026", "estado": "Frecuente"},
+  {"nombre": "Constanza Díaz", "telefono": "+56 9 3456 7890", "correo": "constanza.diaz@outlook.cl", "terapia_favorita": "Aromaterapia", "visitas": 3, "ultima_visita": "18-08-2026", "estado": "Nuevo"},
+  {"nombre": "Ignacio Vera", "telefono": "+56 9 4567 8901", "correo": "ignacio.vera@mail.cl", "terapia_favorita": "Masaje facial", "visitas": 5, "ultima_visita": "20-08-2026", "estado": "Nuevo"},
+  {"nombre": "Valentina Soto", "telefono": "+56 9 5678 9012", "correo": "valentina.soto@gmail.com", "terapia_favorita": "Masaje descontracturante", "visitas": 15, "ultima_visita": "25-08-2026", "estado": "Frecuente"},
+  {"nombre": "Rodrigo Pino", "telefono": "+56 9 6789 0123", "correo": "rodrigo.pino@gmail.com", "terapia_favorita": "Masaje facial", "visitas": 1, "ultima_visita": "10-07-2026", "estado": "Inactivo"}
+]
