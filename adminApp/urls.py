@@ -1,9 +1,9 @@
 from django.urls import path
-from adminApp import view
+from adminApp import views
 
 urlpatterns = [
-    path('', view.panel, name='panel_admin'),
-    path('turnos/', view.turnos, name='turnos_admin'),
-    path('clientes/', view.clientes, name='clientes_admin'),
-    path('perfil/', view.mi_perfil, name='perfil_admin'),
+    path('', views.panel, name='panel_admin'),
+    path('turnos/', views.turnos, name='turnos_admin'),
+    path('clientes/', views.clientes, name='clientes_admin'),
+    path('perfil/', views.mi_perfil, name='perfil_admin'),
 ]
