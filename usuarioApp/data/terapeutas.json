@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "nombre": "Camila Torres",
+    "profesion": "Terapeuta especialista en masajes",
+    "dias_atencion": "Lunes, miércoles y viernes",
+    "correo": "camila.torres@spa.cl",
+    "imagen": "images/camila_torres.jpg"
+  },
+  {
+    "id": 2,
+    "nombre": "Adriana Martínez",
+    "profesion": "Terapeuta en aromaterapia y reflexología",
+    "dias_atencion": "Martes y jueves",
+    "correo": "adriana.martinez@spa.cl",
+    "imagen": "images/adriana_martinez.jpg"
+  },
+  {
+    "id": 3,
+    "nombre": "Andrés Díaz",
+    "profesion": "Terapeuta en masajes descontracturantes y piedras calientes",
+    "dias_atencion": "Lunes a viernes",
+    "correo": "andres.diaz@spa.cl",
+    "imagen": "images/andres_diaz.jpg"
+  }
+]

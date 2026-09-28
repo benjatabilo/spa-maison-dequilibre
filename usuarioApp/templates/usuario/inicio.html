@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Inicio - Maison D'Equilibre{% endblock %}
+
+{% block contenido %}
+
+<section class="hero-spa">
+  <h1 class="fw-bold mb-2">Bienvenido a</h1>
+  <img src="{% static 'images/logo1_transparente.png' %}" alt="Maison D'Equilibre"
+    class="d-block mx-auto my-3" style="height: 110px;">
+  <p class="fs-5">{{ info.eslogan }}</p>
+  <button class="btn btn-spa-primary btn-lg">Reservar hora</button>
+</section>
+
+<div id="carouselEspacios" class="carousel slide" data-bs-ride="carousel">
+
+  <div class="carousel-indicators">
+    {% for imagen in info.carrusel %}
+    <button type="button" data-bs-target="#carouselEspacios" data-bs-slide-to="{{ forloop.counter0 }}"
+      {% if forloop.first %}class="active" aria-current="true" {% endif %}
+      aria-label="Imagen {{ forloop.counter }}"></button>
+    {% endfor %}
+  </div>
+
+  <div class="carousel-inner">
+    {% for imagen in info.carrusel %}
+    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+      <img src="{% static imagen %}" class="d-block w-100" style="height:420px;object-fit:cover;"
+        alt="Espacio de {{ info.nombre_spa }}">
+    </div>
+    {% endfor %}
+  </div>
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselEspacios" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Anterior</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselEspacios" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Siguiente</span>
+  </button>
+</div>
+
+<section class="container my-5">
+  <div class="row g-4">
+
+    <div class="col-md-7">
+      <h3>Sobre nosotros</h3>
+      <p>{{ info.descripcion }}</p>
+    </div>
+
+    <div class="col-md-5">
+      <div class="card card-spa p-4">
+        <h5 class="mb-3">Contáctanos</h5>
+        <p class="mb-1"><strong>Dirección:</strong> {{ info.direccion }}</p>
+        <p class="mb-1"><strong>Teléfono:</strong> {{ info.telefono }}</p>
+        <p class="mb-3"><strong>Horario:</strong> {{ info.horario }}</p>
+        <hr>
+        <p class="mb-1"><strong>Instagram:</strong> {{ info.redes_sociales.instagram }}</p>
+        <p class="mb-1"><strong>Facebook:</strong> {{ info.redes_sociales.facebook }}</p>
+        <p class="mb-0"><strong>WhatsApp:</strong> {{ info.redes_sociales.whatsapp }}</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,19 @@
+{
+  "nombre_spa": "Maison D'Equilibre",
+  "eslogan": "Tu espacio de equilibrio y bienestar",
+  "descripcion": "En Maison D'Equilibre creemos que el bienestar es un equilibrio entre cuerpo y mente. Nuestro espacio fue diseñado para que te desconectes del ritmo diario y te reencuentres contigo mismo a través de terapias manuales, circuitos de agua y ambientes pensados para la relajación profunda. Cada rincón de nuestro spa busca entregarte una experiencia sensorial completa, guiada por terapeutas certificados.",
+  "telefono": "+56 9 1234 5678",
+  "direccion": "Av. del Mar 450, La Serena",
+  "horario": "Lunes a sábado, 09:00 a 20:00 hrs",
+  "redes_sociales": {
+    "instagram": "@maisondequilibre",
+    "facebook": "Maison D'Equilibre Spa",
+    "whatsapp": "+56 9 1234 5678"
+  },
+  "carrusel": [
+    "images/espacio_bienvenida.jpg",
+    "images/espacio_masaje.jpg",
+    "images/espacio_piscina.jpg",
+    "images/espacio_recepcion.jpg"
+  ]
+}

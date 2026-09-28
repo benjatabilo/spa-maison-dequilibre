@@ -1,0 +1,196 @@
+:root {
+  --color-verde-bosque: #4F6F5A;
+  --color-beige-calido: #CDBA96;
+  --color-crema: #EFE7D8;
+  --color-grafito: #2E3F34;
+  --color-olivo-claro: #8A9B7A;
+  --color-verde-bosque-hover: #435e4c;
+  --color-beige-calido-hover: #c2ac82;
+}
+
+/* -----------------------------------------------------
+   Fondo general del sitio
+----------------------------------------------------- */
+body {
+  background-color: var(--color-crema);
+  color: var(--color-grafito);
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+a {
+  color: var(--color-verde-bosque);
+}
+a:hover {
+  color: var(--color-verde-bosque-hover);
+}
+
+/* -----------------------------------------------------
+   Navbar (usada en base.html, la ven las 3 apps)
+----------------------------------------------------- */
+.navbar-spa {
+  background-color: var(--color-grafito);
+  min-height: 72px;
+  max-height: 72px;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+}
+.navbar-spa .nav-link {
+  color: #ffffff;
+}
+.navbar-spa .nav-link:hover,
+.navbar-spa .nav-link.active {
+  color: var(--color-olivo-claro);
+}
+.navbar-spa .navbar-brand {
+  padding: 0 !important;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  height: 72px;
+}
+.navbar-spa .navbar-brand img {
+  height: 62px !important;
+  max-height: 62px !important;
+  width: auto !important;
+  display: block;
+}
+
+.navbar-panel {
+  background-color: var(--color-verde-bosque);
+  min-height: 72px;
+  max-height: 72px;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+}
+.navbar-panel .navbar-brand {
+  color: #ffffff;
+  padding: 0 !important;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  height: 72px;
+}
+.navbar-panel .navbar-brand img {
+  height: 56px !important;
+  max-height: 56px !important;
+  width: auto !important;
+  display: block;
+}
+
+/* -----------------------------------------------------
+   Botones
+----------------------------------------------------- */
+.btn-spa-primary {
+  background-color: var(--color-verde-bosque);
+  border-color: var(--color-verde-bosque);
+  color: #ffffff;
+}
+.btn-spa-primary:hover {
+  background-color: var(--color-verde-bosque-hover);
+  border-color: var(--color-verde-bosque-hover);
+  color: #ffffff;
+}
+
+.btn-spa-secondary {
+  background-color: var(--color-beige-calido);
+  border-color: var(--color-beige-calido);
+  color: var(--color-grafito);
+}
+.btn-spa-secondary:hover {
+  background-color: var(--color-beige-calido-hover);
+  border-color: var(--color-beige-calido-hover);
+  color: var(--color-grafito);
+}
+
+/* -----------------------------------------------------
+   Hero (sección de bienvenida, la usa usuarioApp)
+----------------------------------------------------- */
+.hero-spa {
+  background-color: var(--color-beige-calido);
+  color: var(--color-grafito);
+  padding: 0.4rem 1rem;
+  text-align: center;
+}
+
+/* -----------------------------------------------------
+   Cards (terapias, paquetes, etc.)
+----------------------------------------------------- */
+.card-spa {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.card-spa .card-img-placeholder {
+  height: 100px;
+  background-color: var(--color-olivo-claro);
+}
+.card-spa .card-body {
+  background-color: #ffffff;
+}
+
+/* -----------------------------------------------------
+   Sidebar (usada en terapeutaApp y adminApp)
+----------------------------------------------------- */
+.sidebar-spa {
+  width: 200px;
+  background-color: var(--color-beige-calido);
+  padding: 1rem;
+  min-height: 100%;
+}
+.sidebar-spa p {
+  margin-bottom: 0.6rem;
+  color: var(--color-grafito);
+}
+.sidebar-spa .activo {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+/* -----------------------------------------------------
+   Stat cards (paneles de rendimiento / resumen)
+----------------------------------------------------- */
+.stat-card {
+  border-radius: 8px;
+  padding: 1rem;
+  color: #ffffff;
+}
+.stat-card.tono-1 { background-color: var(--color-olivo-claro); }
+.stat-card.tono-2 { background-color: var(--color-beige-calido); color: var(--color-grafito); }
+.stat-card.tono-3 { background-color: var(--color-verde-bosque); }
+.stat-card.tono-4 { background-color: var(--color-grafito); }
+
+/* -----------------------------------------------------
+   Tablas (agendas, turnos)
+----------------------------------------------------- */
+.table-spa thead {
+  background-color: var(--color-beige-calido);
+}
+.table-spa .ocupado {
+  background-color: var(--color-olivo-claro);
+  color: #ffffff;
+}
+
+/* -----------------------------------------------------
+   Badges de estado
+----------------------------------------------------- */
+.badge-activo {
+  background-color: var(--color-olivo-claro);
+  color: #ffffff;
+}
+.badge-libre {
+  background-color: var(--color-beige-calido);
+  color: var(--color-grafito);
+}
+
+/* -----------------------------------------------------
+   Footer
+----------------------------------------------------- */
+.footer-spa {
+  background-color: var(--color-grafito);
+  color: #ffffff;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}

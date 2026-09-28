@@ -1,0 +1,8 @@
+[
+  {"terapeuta": "Camila Torres", "sala": "Sala 1", "turno": "09:00 - 14:00", "estado": "Activo"},
+  {"terapeuta": "Pedro Salinas", "sala": "Sala 2", "turno": "14:00 - 20:00", "estado": "Activo"},
+  {"terapeuta": "Fernanda Ibáñez", "sala": "Sala 3", "turno": "09:00 - 14:00", "estado": "Libre"},
+  {"terapeuta": "Joaquín Rivas", "sala": "Sala 4", "turno": "14:00 - 20:00", "estado": "Activo"},
+  {"terapeuta": "Daniela Pérez", "sala": "Sala 1", "turno": "14:00 - 20:00", "estado": "Libre"},
+  {"terapeuta": "Matías Contreras", "sala": "Sala 5", "turno": "09:00 - 14:00", "estado": "Activo"}
+]

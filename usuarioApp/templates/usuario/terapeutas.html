@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Terapeutas - Maison D'Equilibre{% endblock %}
+
+{% block contenido %}
+<section class="container my-5">
+  <h2 class="mb-4">Nuestro equipo de terapeutas</h2>
+
+  {% if hay_terapeutas %}
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for terapeuta in terapeutas %}
+    <div class="col">
+      <div class="card card-spa h-100">
+        <img src="{% static terapeuta.imagen %}" class="card-img-top" style="height:320px;object-fit:cover;object-position:center 20%;"
+          alt="{{ terapeuta.nombre }}">
+        <div class="card-body">
+          <h5 class="card-title">{{ terapeuta.nombre }}</h5>
+          <p class="card-text mb-1"><strong>Profesión:</strong> {{ terapeuta.profesion }}</p>
+          <p class="card-text mb-1"><strong>Días de atención:</strong> {{ terapeuta.dias_atencion }}</p>
+          <p class="card-text mb-0"><strong>Contacto:</strong> {{ terapeuta.correo }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-warning">No hay terapeutas disponibles por el momento.</div>
+  {% endif %}
+
+</section>
+{% endblock %}

@@ -1,0 +1,16 @@
+{
+  "nombre": "Camila Torres",
+  "cargo": "Terapeuta especialista en masajes",
+  "correo": "ctorres@sparelax.cl",
+  "foto": "images/terapeutas/camila_torres.jpg",
+  "rendimiento": {
+    "citas_mes": 32,
+    "calificacion": 4.8,
+    "horas_trabajadas": 96,
+    "terapias_top": [
+      {"nombre": "Masaje descontracturante", "veces": 14},
+      {"nombre": "Piedras calientes", "veces": 9},
+      {"nombre": "Aromaterapia", "veces": 6}
+    ]
+  }
+}
