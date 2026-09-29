@@ -94,6 +94,10 @@
            class="{% if seccion_activa == 'panel' %}activo{% endif %}">
           Resumen general
         </a>
+        <a href="{% url 'lista_terapias' %}"
+           class="{% if seccion_activa == 'terapias' %}activo{% endif %}">
+          Gestión de terapias
+        </a>
         <a href="{% url 'turnos_admin' %}"
            class="{% if seccion_activa == 'turnos' %}activo{% endif %}">
           Turnos y salas
