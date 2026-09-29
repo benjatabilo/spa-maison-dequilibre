@@ -13,6 +13,14 @@
     <strong>"{{ terapia.nombre }}"</strong>? Esta acción no se puede deshacer.
   </p>
 
+  {% if total_reservas > 0 %}
+  <div class="alert alert-warning">
+    Esta terapia tiene <strong>{{ total_reservas }}</strong> reserva{{ total_reservas|pluralize }}
+    asociada{{ total_reservas|pluralize }}. No se podrá eliminar hasta que esas reservas
+    se cancelen o se reasignen a otra terapia.
+  </div>
+  {% endif %}
+
   {% if terapia.imagen %}
   <img src="{{ terapia.imagen.url }}" alt="{{ terapia.nombre }}"
        class="mb-3" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">

@@ -8,6 +8,7 @@ from PIL import Image
 from django.contrib.auth.decorators import login_required
 from .models import Terapia
 from .forms import TerapiaForm
+from django.db.models.deletion import RestrictedError
 
 def _cargar_json(nombre_archivo, valor_por_defecto=None):
     """
@@ -220,17 +221,32 @@ def editar_terapia(request, pk):
 
 
 @login_required
+@login_required
 def eliminar_terapia(request, pk):
-    """Eliminar: borra una terapia, pidiendo confirmación previa."""
+    """
+    Eliminar: borra una terapia, pidiendo confirmacion previa.
+
+    Reserva.terapia usa on_delete=RESTRICT, asi que Django no permite
+    borrar una terapia si existen reservas que la referencian. Se captura
+    ese caso para mostrar un mensaje claro en vez de un Error 500.
+    """
     terapia = get_object_or_404(Terapia, pk=pk)
 
     if request.method == 'POST':
-        terapia.delete()
-        messages.success(request, 'La terapia fue eliminada correctamente.')
+        try:
+            terapia.delete()
+            messages.success(request, 'La terapia fue eliminada correctamente.')
+        except RestrictedError:
+            messages.error(
+                request,
+                f'No se puede eliminar "{terapia.nombre}" porque tiene reservas '
+                'asociadas. Cancela o reasigna esas reservas antes de eliminarla.'
+            )
         return redirect('lista_terapias')
 
     contexto = {
         'terapia': terapia,
+        'total_reservas': terapia.reservas.count(),
         'seccion_activa': 'terapias',
     }
     return render(request, 'administrador/terapia_confirm_delete.html', contexto)
