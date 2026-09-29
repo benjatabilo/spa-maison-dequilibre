@@ -10,7 +10,7 @@
   <img src="{% static 'images/logo1_transparente.png' %}" alt="Maison D'Equilibre"
     class="d-block mx-auto my-3" style="height: 110px;">
   <p class="fs-5">{{ info.eslogan }}</p>
-  <button class="btn btn-spa-primary btn-lg">Reservar hora</button>
+  <a href="{% url 'crear_reserva' %}" class="btn btn-spa-primary btn-lg">Reservar hora</a>
 </section>
 
 <div id="carouselEspacios" class="carousel slide" data-bs-ride="carousel">

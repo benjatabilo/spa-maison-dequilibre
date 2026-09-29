@@ -35,11 +35,40 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'terapeutas' %}">Terapeutas</a>
           </li>
-          <li class="nav-item">
+                    <li class="nav-item">
             <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Promociones</a>
           </li>
+
+          {% if user.is_authenticated %}
+            {% if rol_usuario == 'Administrador' %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'panel_admin' %}">Administración</a>
+            </li>
+            {% elif rol_usuario == 'Terapeuta' %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'rendimiento_terapeuta' %}">Mi agenda</a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'mis_reservas' %}">Mis reservas</a>
+            </li>
+            {% endif %}
+          {% endif %}
         </ul>
-        <a href="{% url 'login' %}" class="btn btn-spa-secondary btn-sm ms-lg-3">Iniciar sesión</a>
+
+        {% if user.is_authenticated %}
+        <div class="d-flex align-items-center gap-2 ms-lg-3">
+          <a href="{% url 'mi_panel' %}" class="btn btn-spa-secondary btn-sm">
+            {{ user.first_name|default:user.username }} · {{ rol_usuario }}
+          </a>
+          <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">Cerrar sesión</a>
+        </div>
+        {% else %}
+        <div class="d-flex align-items-center gap-2 ms-lg-3">
+          <a href="{% url 'login' %}" class="btn btn-spa-secondary btn-sm">Iniciar sesión</a>
+          <a href="{% url 'registro' %}" class="btn btn-outline-light btn-sm">Registrarse</a>
+        </div>
+        {% endif %}
       </div>
     </div>
   </nav>

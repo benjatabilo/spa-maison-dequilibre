@@ -3,7 +3,7 @@ import json
 from django.conf import settings
 from django.shortcuts import render
 from PIL import Image
-
+from django.contrib.auth.decorators import login_required
 
 def _cargar_json(nombre_archivo, valor_por_defecto=None):
     """
@@ -76,7 +76,7 @@ def _construir_grafico_citas(citas):
         })
     return grafico
 
-
+@login_required
 def panel(request):
     resumen = _cargar_json('resumen.json', {})
     citas = _cargar_json('citas.json', [])
@@ -99,7 +99,7 @@ def panel(request):
     }
     return render(request, 'administrador/panel.html', contexto)
 
-
+@login_required
 def turnos(request):
     lista_turnos = _cargar_json('turnos.json', [])
 
@@ -118,7 +118,7 @@ def turnos(request):
     }
     return render(request, 'administrador/turnos.html', contexto)
 
-
+@login_required
 def clientes(request):
     lista_clientes = _cargar_json('clientes.json', [])
 
@@ -133,7 +133,7 @@ def clientes(request):
     }
     return render(request, 'administrador/clientes.html', contexto)
 
-
+@login_required
 def mi_perfil(request):
     perfil = _cargar_json('perfil.json', {})
 

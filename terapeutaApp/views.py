@@ -2,7 +2,7 @@ import os
 import json
 from django.conf import settings
 from django.shortcuts import render
-
+from django.contrib.auth.decorators import login_required
 
 def _cargar_json(nombre_archivo):
     """Lee un archivo JSON ubicado en terapeutaApp/data/ y retorna su contenido."""
@@ -42,7 +42,7 @@ def _construir_grilla_agenda(agenda):
 
     return dias, grilla
 
-
+@login_required
 def rendimiento(request):
     """
     Vista 1: menu del funcionario + informacion de rendimiento
@@ -68,7 +68,7 @@ def rendimiento(request):
     }
     return render(request, 'terapeuta/panel.html', contexto)
 
-
+@login_required
 def perfil_inventario(request):
     """
     Vista 2: informacion de perfil (datos predeterminados del trabajador)

@@ -1,0 +1,114 @@
+{% extends 'usuario/base_cliente.html' %}
+
+{% block titulo %}Mi Perfil - Maison D'Equilibre{% endblock %}
+
+{% block panel_contenido %}
+
+<div class="d-flex justify-content-between align-items-center mb-4 p-3 rounded"
+  style="background-color: #798c71; color: white;">
+  <h3 class="m-0 fw-bold">Resumen</h3>
+  <a href="{% url 'crear_reserva' %}" class="btn btn-light text-success fw-bold">+ Agendar Reserva</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 p-3 shadow-sm" style="background-color: #8fa085; color: white;">
+      <span class="fs-6 opacity-75">Reservas Activas</span>
+      <h2 class="fw-bold m-0">{{ total_activas }}</h2>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 p-3 shadow-sm" style="background-color: #c0b298; color: #2d4030;">
+      <span class="fs-6 opacity-75">Mi Estado</span>
+      <h2 class="fw-bold m-0">Activo</h2>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 p-3 shadow-sm" style="background-color: #466352; color: white;">
+      <span class="fs-6 opacity-75">Socio Desde</span>
+      <h2 class="fw-bold m-0">{{ user.date_joined|date:"M Y" }}</h2>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-4 bg-white h-100">
+      <h4 class="fw-bold mb-3" style="color: #2d4030;">Actualizar mis datos</h4>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold" style="color: #466352;">Nombre de usuario</label>
+          <input type="text" class="form-control" value="{{ user.username }}" disabled>
+        </div>
+        {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="form-label fw-semibold" style="color: #466352;">
+            {{ field.label }}
+          </label>
+          {{ field }}
+          {% for error in field.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn text-white w-100 fw-bold mt-2" style="background-color: #466352;">
+          Guardar Cambios
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm p-4 bg-white h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold m-0" style="color: #2d4030;">Próximas citas</h4>
+        <a href="{% url 'mis_reservas' %}" class="small text-decoration-none fw-bold"
+          style="color: #466352;">Ver todas</a>
+      </div>
+
+      {% if proximas %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Terapia</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reserva in proximas %}
+            <tr>
+              <td>
+                <a href="{% url 'detalle_reserva' reserva.pk %}" class="fw-semibold text-decoration-none">
+                  {{ reserva.terapia.nombre }}
+                </a>
+                <div class="small text-muted">{{ reserva.terapeuta.nombre }}</div>
+              </td>
+              <td>{{ reserva.fecha|date:"d/m/Y" }}<br><span class="small text-muted">{{ reserva.hora|time:"H:i" }} hrs</span></td>
+              <td>
+                {% if reserva.estado == 'CONFIRMADA' %}
+                <span class="badge bg-primary">Confirmada</span>
+                {% else %}
+                <span class="badge bg-warning text-dark">Pendiente</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-4 text-muted">
+        <p class="mb-2">No tienes citas próximas.</p>
+        <a href="{% url 'crear_reserva' %}" class="btn btn-sm text-white"
+          style="background-color: #798c71;">Reservar ahora</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
