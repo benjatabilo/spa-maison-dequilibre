@@ -1,0 +1,30 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - Eliminar terapia{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">Eliminar terapia</h2>
+
+<div class="card card-spa p-4" style="max-width: 560px;">
+  <p>
+    ¿Estás seguro de que deseas eliminar la terapia
+    <strong>"{{ terapia.nombre }}"</strong>? Esta acción no se puede deshacer.
+  </p>
+
+  {% if terapia.imagen %}
+  <img src="{{ terapia.imagen.url }}" alt="{{ terapia.nombre }}"
+       class="mb-3" style="width:120px;height:120px;object-fit:cover;border-radius:8px;">
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+      <a href="{% url 'lista_terapias' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
