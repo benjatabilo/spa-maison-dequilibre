@@ -9,8 +9,9 @@ urlpatterns = [
     path('terapeutas/', views.terapeutas, name='terapeutas'),
 
     # Autenticación de Usuarios / Clientes
-    path('login/', auth_views.LoginView.as_view(template_name='usuario/login.html'), name='login'),
+    path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('panel/', views.mi_panel, name='mi_panel'),
     path('registro/', views.registro_view, name='registro'),
 
     # Perfil del Cliente
@@ -22,4 +23,5 @@ urlpatterns = [
     path('reservas/<int:pk>/', views.detalle_reserva, name='detalle_reserva'),
     path('reservas/<int:pk>/editar/', views.editar_reserva, name='editar_reserva'),
     path('reservas/<int:pk>/cancelar/', views.cancelar_reserva, name='cancelar_reserva'),
+    path('reservas/<int:pk>/eliminar/', views.eliminar_reserva, name='eliminar_reserva'),
 ]

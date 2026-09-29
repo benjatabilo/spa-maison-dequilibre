@@ -3,18 +3,32 @@ import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login, logout
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-
+from django.contrib.auth.models import User, Group
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.db.models import Q
+from django.utils.dateparse import parse_date
+from django.utils import timezone
 # Importamos los modelos de las otras apps y de la propia usuarioApp
 from adminApp.models import Terapia
 from terapeutaApp.models import Terapeuta
 from .models import Reserva
-from .forms import ReservaForm, PerfilUsuarioForm
+from .forms import ReservaForm, PerfilUsuarioForm, RegistroForm
+from .roles import obtener_rol, ADMINISTRADOR, TERAPEUTA
 
+# --- FUNCIÓN AUXILIAR PARA REDIRECCIÓN SEGÚN ROL DE USUARIO ---
+def _redirect_by_role(user):
+    """Redirige al usuario a su panel según su rol."""
+    rol = obtener_rol(user)
+    if rol == ADMINISTRADOR:
+        return redirect('panel_admin')
+    if rol == TERAPEUTA:
+        return redirect('rendimiento_terapeuta')
+    return redirect('mi_perfil')
 
-# --- FUNCIÓN AUXILIAR PARA JSON (Mantenida por si conservas info_spa.json) ---
+# --- FUNCIÓN AUXILIAR PARA JSON ---
 def _cargar_json(nombre_archivo):
     ruta = os.path.join(settings.BASE_DIR, 'usuarioApp', 'data', nombre_archivo)
     if os.path.exists(ruta):
@@ -33,87 +47,163 @@ def inicio(request):
     }
     return render(request, 'usuario/inicio.html', contexto)
 
-
 def terapias(request):
     """Catálogo de terapias desde la base de datos (con buscador)."""
-    query = request.GET.get('q', '')
+    query = request.GET.get('q', '').strip()
+
+    lista_terapias = Terapia.objects.all().order_by('nombre')
     if query:
-        lista_terapias = Terapia.objects.filter(nombre__icontains=query)
-    else:
-        lista_terapias = Terapia.objects.all()
+        lista_terapias = lista_terapias.filter(
+            Q(nombre__icontains=query) | Q(descripcion__icontains=query)
+        )
 
     contexto = {
         'terapias': lista_terapias,
-        'hay_terapias': lista_terapias.exists(),
         'total_terapias': lista_terapias.count(),
         'query': query,
     }
     return render(request, 'usuario/terapias.html', contexto)
 
-
 def terapeutas(request):
-    """Catálogo de terapeutas desde la base de datos."""
-    lista_terapeutas = Terapeuta.objects.all()
-    contexto = {
-        'terapeutas': lista_terapeutas,
-        'hay_terapeutas': lista_terapeutas.exists(),
-    }
-    return render(request, 'usuario/terapeutas.html', contexto)
-
+    """Directorio de terapeutas desde la base de datos."""
+    lista_terapeutas = Terapeuta.objects.all().order_by('nombre')
+    return render(request, 'usuario/terapeutas.html', {'terapeutas': lista_terapeutas})
 
 # --- AUTENTICACIÓN (LOGIN, LOGOUT Y REGISTRO) ---
 
+def login_view(request):
+    """Inicia sesión con usuario o correo y redirige según el rol."""
+    if request.user.is_authenticated:
+        return _redirect_by_role(request.user)
+
+    next_url = request.GET.get('next', '')
+
+    if request.method == 'POST':
+        login_input = request.POST.get('username', '').strip()
+        password_input = request.POST.get('password', '')
+
+        usuario = authenticate(request, username=login_input, password=password_input)
+
+        if usuario is None and '@' in login_input:
+            user_obj = User.objects.filter(email__iexact=login_input).first()
+            if user_obj:
+                usuario = authenticate(request, username=user_obj.username, password=password_input)
+
+        if usuario is not None:
+            login(request, usuario)
+            messages.success(request, f"¡Bienvenido/a de nuevo, {usuario.username}!")
+
+            # Si venía de una página protegida, vuelve ahí (solo si la URL es segura)
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
+            return _redirect_by_role(usuario)
+
+        messages.error(request, "Usuario/correo o contraseña incorrectos.")
+
+    return render(request, 'usuario/login.html')
+
 def registro_view(request):
     """Permite a un nuevo cliente registrarse en la plataforma."""
+    if request.user.is_authenticated:
+        return _redirect_by_role(request.user)
+
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = RegistroForm(request.POST)
         if form.is_valid():
             usuario = form.save()
+
+            # Todo registro público queda como Cliente
+            grupo_cliente, _ = Group.objects.get_or_create(name='Cliente')
+            usuario.groups.add(grupo_cliente)
+
             login(request, usuario)
-            messages.success(request, f"Bienvenido/a {usuario.username}, tu cuenta ha sido creada con éxito.")
-            return redirect('inicio_usuario')
+            messages.success(request, f"Bienvenido/a {usuario.first_name}, tu cuenta ha sido creada con éxito.")
+            return _redirect_by_role(usuario)
+        messages.error(request, "Revisa los datos ingresados, hay errores en el formulario.")
     else:
-        form = UserCreationForm()
+        form = RegistroForm()
+
     return render(request, 'usuario/registro.html', {'form': form})
 
-
 def logout_view(request):
-    """Cierra la sesión del cliente."""
+    """Cierra la sesión activa del usuario."""
     logout(request)
     messages.info(request, "Has cerrado sesión correctamente.")
     return redirect('inicio_usuario')
 
+@login_required
+def mi_panel(request):
+    """Lleva al usuario a su panel según su rol (admin, terapeuta o cliente)."""
+    return _redirect_by_role(request.user)
 
 # --- CRUD DE RESERVAS DEL CLIENTE ---
 
 @login_required
 def crear_reserva(request):
     """Permite al cliente crear/agendar una nueva reserva."""
-    terapia_id = request.GET.get('terapia_id')
     initial_data = {}
-    if terapia_id:
-        initial_data['terapia'] = terapia_id
+    if request.GET.get('terapia_id'):
+        initial_data['terapia'] = request.GET.get('terapia_id')
+    if request.GET.get('terapeuta_id'):
+        initial_data['terapeuta'] = request.GET.get('terapeuta_id')
 
     if request.method == 'POST':
-        form = ReservaForm(request.POST)
+        form = ReservaForm(request.POST, user=request.user)
         if form.is_valid():
             reserva = form.save(commit=False)
-            reserva.usuario = request.user  # Vincula la reserva al cliente autenticado
+            reserva.usuario = request.user
             reserva.save()
             messages.success(request, "¡Tu reserva se ha registrado correctamente!")
             return redirect('mis_reservas')
+        messages.error(request, "No se pudo registrar la reserva. Revisa los errores del formulario.")
     else:
-        form = ReservaForm(initial=initial_data)
+        form = ReservaForm(initial=initial_data, user=request.user)
 
     return render(request, 'usuario/reserva_form.html', {'form': form, 'titulo': 'Agendar Cita'})
-
-
 @login_required
 def mis_reservas(request):
-    """Lista todas las reservas realizadas por el cliente autenticado."""
-    reservas = Reserva.objects.filter(usuario=request.user)
-    return render(request, 'usuario/mis_reservas.html', {'reservas': reservas})
+    """Lista las reservas del cliente con búsqueda y filtros."""
+    todas = Reserva.objects.filter(usuario=request.user)
+    reservas = todas.select_related('terapia', 'terapeuta')
 
+    q = request.GET.get('q', '').strip()
+    estado = request.GET.get('estado', '').strip()
+    desde = request.GET.get('desde', '').strip()
+    hasta = request.GET.get('hasta', '').strip()
+
+    # Buscar por nombre de terapia o de terapeuta
+    if q:
+        reservas = reservas.filter(
+            Q(terapia__nombre__icontains=q) | Q(terapeuta__nombre__icontains=q)
+        )
+
+    # Filtrar por estado (solo si es un estado válido)
+    estados_validos = [codigo for codigo, _ in Reserva.ESTADOS]
+    if estado in estados_validos:
+        reservas = reservas.filter(estado=estado)
+    else:
+        estado = ''
+
+    # Filtrar por rango de fechas (parse_date devuelve None si el formato es inválido)
+    fecha_desde = parse_date(desde) if desde else None
+    fecha_hasta = parse_date(hasta) if hasta else None
+    if fecha_desde:
+        reservas = reservas.filter(fecha__gte=fecha_desde)
+    if fecha_hasta:
+        reservas = reservas.filter(fecha__lte=fecha_hasta)
+
+    contexto = {
+        'reservas': reservas,
+        'total_general': todas.count(),
+        'total_filtrado': reservas.count(),
+        'estados': Reserva.ESTADOS,
+        'q': q,
+        'estado': estado,
+        'desde': desde if fecha_desde else '',
+        'hasta': hasta if fecha_hasta else '',
+        'hay_filtros': bool(q or estado or fecha_desde or fecha_hasta),
+    }
+    return render(request, 'usuario/mis_reservas.html', contexto)
 
 @login_required
 def detalle_reserva(request, pk):
@@ -132,16 +222,16 @@ def editar_reserva(request, pk):
         return redirect('mis_reservas')
 
     if request.method == 'POST':
-        form = ReservaForm(request.POST, instance=reserva)
+        form = ReservaForm(request.POST, instance=reserva, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Reserva actualizada con éxito.")
             return redirect('mis_reservas')
+        messages.error(request, "No se pudo actualizar la reserva. Revisa los errores del formulario.")
     else:
-        form = ReservaForm(instance=reserva)
+        form = ReservaForm(instance=reserva, user=request.user)
 
     return render(request, 'usuario/reserva_form.html', {'form': form, 'titulo': 'Modificar Reserva'})
-
 
 @login_required
 def cancelar_reserva(request, pk):
@@ -156,19 +246,52 @@ def cancelar_reserva(request, pk):
 
     return render(request, 'usuario/reserva_confirm_delete.html', {'reserva': reserva})
 
+@login_required
+def eliminar_reserva(request, pk):
+    """Elimina definitivamente una reserva del cliente (solo si ya está cancelada)."""
+    reserva = get_object_or_404(Reserva, pk=pk, usuario=request.user)
+
+    if reserva.estado != 'CANCELADA':
+        messages.error(
+            request,
+            "Solo puedes eliminar reservas que ya están canceladas. Cancela la cita primero."
+        )
+        return redirect('mis_reservas')
+
+    if request.method == 'POST':
+        reserva.delete()
+        messages.success(request, "La reserva fue eliminada definitivamente.")
+        return redirect('mis_reservas')
+
+    return render(request, 'usuario/reserva_eliminar.html', {'reserva': reserva})
 
 # --- PERFIL DE USUARIO / CLIENTE ---
 
 @login_required
 def mi_perfil(request):
-    """Permite al cliente visualizar y actualizar sus datos personales."""
+    """Resumen del cliente: métricas, próximas citas y edición de datos personales."""
+    activas = Reserva.objects.filter(
+        usuario=request.user, estado__in=['PENDIENTE', 'CONFIRMADA']
+    )
+    proximas = (
+        activas.filter(fecha__gte=timezone.localdate())
+        .select_related('terapia', 'terapeuta')
+        .order_by('fecha', 'hora')[:4]
+    )
+
     if request.method == 'POST':
         form = PerfilUsuarioForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Tus datos de perfil se han actualizado correctamente.")
             return redirect('mi_perfil')
+        messages.error(request, "No se pudieron guardar los cambios. Revisa los datos ingresados.")
     else:
         form = PerfilUsuarioForm(instance=request.user)
 
-    return render(request, 'usuario/perfil.html', {'form': form})
+    contexto = {
+        'form': form,
+        'proximas': proximas,
+        'total_activas': activas.count(),
+    }
+    return render(request, 'usuario/perfil.html', contexto)

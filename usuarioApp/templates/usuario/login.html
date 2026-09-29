@@ -7,46 +7,47 @@
 <section class="container my-5">
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-
       <div class="card card-spa p-4">
         <h3 class="mb-1 text-center">Iniciar sesión</h3>
         <p class="text-center text-muted small mb-4">
+          Ingresa con tu usuario o correo electrónico.
         </p>
 
-        <form method="get" action="{% url 'login' %}">
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} p-2 small">
+            {{ message }}
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" action="">
+          {% csrf_token %}
           <div class="mb-3">
-            <label for="usuario" class="form-label">Usuario o correo</label>
-            <input type="text" class="form-control" id="usuario" name="usuario"
-                   placeholder="nombre.apellido@sparelax.cl">
+            <label for="username" class="form-label fw-semibold">Usuario o correo</label>
+            <input type="text" class="form-control" id="username" name="username"
+              placeholder="Tu usuario o correo" autofocus required>
           </div>
           <div class="mb-3">
-            <label for="clave" class="form-label">Contraseña</label>
-            <input type="password" class="form-control" id="clave" name="clave"
-                   placeholder="••••••••">
+            <label for="password" class="form-label fw-semibold">Contraseña</label>
+            <input type="password" class="form-control" id="password" name="password"
+              placeholder="••••••••" required>
           </div>
-          <button type="submit" class="btn btn-spa-primary w-100">Ingresar</button>
+          <button type="submit" class="btn btn-spa-primary w-100 py-2 fw-bold">
+            Ingresar
+          </button>
         </form>
 
-        <div class="d-flex align-items-center my-4">
-          <hr class="flex-grow-1">
-          <span class="px-3 text-muted small">o entra directo a</span>
-          <hr class="flex-grow-1">
-        </div>
+        <hr class="my-4">
 
-        <div class="d-grid gap-2">
-          <a href="{% url 'rendimiento_terapeuta' %}" class="btn btn-spa-secondary">
-            Acceso directo · Terapeuta
-          </a>
-          <a href="{% url 'panel_admin' %}" class="btn btn-spa-secondary">
-            Acceso directo · Administrador
-          </a>
-        </div>
-
-        <p class="text-center small text-muted mt-4 mb-0">
+        <p class="text-center mb-2">
+          ¿No tienes cuenta?
+          <a href="{% url 'registro' %}" class="fw-semibold">Regístrate aquí</a>
+        </p>
+        <p class="text-center small text-muted mb-0">
           <a href="{% url 'main' %}">Volver al inicio</a>
         </p>
       </div>
-
     </div>
   </div>
 </section>

@@ -5,29 +5,55 @@
 
 {% block contenido %}
 <section class="container my-5">
-  <h2 class="mb-4">Nuestras terapias</h2>
 
-  {% if hay_terapias %}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <h2 class="mb-0">Nuestras terapias</h2>
+    <form method="get" class="d-flex gap-2" role="search">
+      <input type="search" name="q" value="{{ query }}" class="form-control"
+        placeholder="Buscar terapia..." aria-label="Buscar terapia">
+      <button type="submit" class="btn btn-spa-primary">Buscar</button>
+      {% if query %}
+      <a href="{% url 'terapias' %}" class="btn btn-outline-secondary">Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if query %}
+  <p class="text-muted small">{{ total_terapias }} resultado{{ total_terapias|pluralize }} para "{{ query }}"</p>
+  {% endif %}
+
+  {% if terapias %}
   <div class="row row-cols-1 row-cols-md-3 g-4">
     {% for terapia in terapias %}
     <div class="col">
       <div class="card card-spa h-100">
-        <img src="{% static terapia.imagen %}" class="card-img-top" style="height:180px;object-fit:cover;"
+        {% if terapia.imagen %}
+        <img src="{{ terapia.imagen.url }}" class="card-img-top" style="height:180px;object-fit:cover;"
           alt="{{ terapia.nombre }}">
+        {% else %}
+        <div class="d-flex align-items-center justify-content-center text-white fw-bold fs-1"
+          style="height:180px;background-color:#8fa085;">
+          {{ terapia.nombre|first|upper }}
+        </div>
+        {% endif %}
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">{{ terapia.nombre }}</h5>
           <p class="card-text mb-1"><strong>Precio:</strong> ${{ terapia.precio }}</p>
-          <p class="card-text mb-1"><strong>Duración:</strong> {{ terapia.duracion }}</p>
-          <p class="card-text mb-2"><strong>Beneficios:</strong> {{ terapia.beneficios }}</p>
+          <p class="card-text mb-2"><strong>Duración:</strong> {{ terapia.duracion }}</p>
+          {% if terapia.descripcion %}
           <p class="card-text small text-muted">{{ terapia.descripcion }}</p>
-          <button class="btn btn-spa-secondary btn-sm mt-auto">Reservar</button>
+          {% endif %}
+          <a href="{% url 'crear_reserva' %}?terapia_id={{ terapia.id }}"
+            class="btn btn-spa-secondary btn-sm mt-auto">Reservar</a>
         </div>
       </div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <div class="alert alert-warning">No hay terapias disponibles por el momento.</div>
+  <div class="alert alert-warning">
+    {% if query %}No encontramos terapias que coincidan con tu búsqueda.{% else %}No hay terapias disponibles por el momento.{% endif %}
+  </div>
   {% endif %}
 
 </section>
