@@ -4,21 +4,17 @@ from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
+from django.db.models.deletion import RestrictedError
 from PIL import Image
 from django.contrib.auth.decorators import login_required
 from .models import Terapia
-from .forms import TerapiaForm
-from django.db.models.deletion import RestrictedError
+from .forms import TerapiaForm, TerapeutaForm, ClienteForm
+from terapeutaApp.models import Terapeuta
+from django.contrib.auth.models import User, Group
 
 def _cargar_json(nombre_archivo, valor_por_defecto=None):
     """
     Lee un archivo JSON ubicado en adminApp/data/ y retorna su contenido.
-
-    Si el archivo no existe o tiene un formato invalido, no se detiene
-    la ejecucion del servidor: se retorna 'valor_por_defecto' (una lista
-    o diccionario vacio segun corresponda) para que la vista y la
-    plantilla puedan seguir funcionando con datos vacios en vez de
-    mostrar un Error 500.
     """
     if valor_por_defecto is None:
         valor_por_defecto = []
@@ -125,18 +121,77 @@ def turnos(request):
 
 @login_required
 def clientes(request):
-    lista_clientes = _cargar_json('clientes.json', [])
+    """
+    Gestion de clientes: lista los usuarios con rol Cliente desde la
+    base de datos (reemplaza el listado de Sumativa 1 basado en JSON).
+    """
+    query = request.GET.get('q', '').strip()
 
-    clientes_frecuentes = [c for c in lista_clientes if c.get('estado') == 'Frecuente']
+    lista_clientes = User.objects.filter(groups__name='Cliente').order_by('username')
+    if query:
+        lista_clientes = lista_clientes.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(email__icontains=query)
+        )
+
+    total_activos = lista_clientes.filter(is_active=True).count()
 
     contexto = {
         'clientes': lista_clientes,
-        'total_clientes': len(lista_clientes),
-        'total_frecuentes': len(clientes_frecuentes),
+        'total_clientes': lista_clientes.count(),
+        'total_activos': total_activos,
+        'query': query,
         'seccion_activa': 'clientes',
-        'sin_datos': not lista_clientes,
     }
     return render(request, 'administrador/clientes.html', contexto)
+
+
+@login_required
+def editar_cliente(request, pk):
+    """Modificar: edita los datos basicos de un cliente."""
+    cliente = get_object_or_404(User, pk=pk, groups__name='Cliente')
+
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, instance=cliente)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Los datos del cliente se actualizaron correctamente.')
+            return redirect('clientes_admin')
+        messages.error(request, 'No se pudo actualizar el cliente. Revisa los errores del formulario.')
+    else:
+        form = ClienteForm(instance=cliente)
+
+    contexto = {
+        'form': form,
+        'cliente': cliente,
+        'seccion_activa': 'clientes',
+    }
+    return render(request, 'administrador/cliente_form.html', contexto)
+
+
+@login_required
+def cambiar_estado_cliente(request, pk):
+    """
+    'Eliminar' de un cliente = desactivar su cuenta, no borrarla.
+    Reserva.usuario usa on_delete=CASCADE: borrar el User de verdad
+    destruiria todo su historial de reservas. Desactivar bloquea su
+    acceso (no puede iniciar sesion) sin perder ese historial.
+    """
+    cliente = get_object_or_404(User, pk=pk, groups__name='Cliente')
+
+    if request.method == 'POST':
+        cliente.is_active = not cliente.is_active
+        cliente.save()
+        if cliente.is_active:
+            messages.success(request, f'La cuenta de {cliente.username} fue reactivada.')
+        else:
+            messages.success(request, f'La cuenta de {cliente.username} fue desactivada.')
+        return redirect('clientes_admin')
+
+    return redirect('clientes_admin')
+
 
 @login_required
 def mi_perfil(request):
@@ -221,7 +276,6 @@ def editar_terapia(request, pk):
 
 
 @login_required
-@login_required
 def eliminar_terapia(request, pk):
     """
     Eliminar: borra una terapia, pidiendo confirmacion previa.
@@ -250,3 +304,100 @@ def eliminar_terapia(request, pk):
         'seccion_activa': 'terapias',
     }
     return render(request, 'administrador/terapia_confirm_delete.html', contexto)
+
+
+# --- CRUD DE TERAPEUTAS (mantenedor de terapeutaApp, gestionado desde aqui) ---
+
+@login_required
+def lista_terapeutas(request):
+    """Mostrar Todos + Buscar: lista los terapeutas registrados."""
+    query = request.GET.get('q', '').strip()
+
+    terapeutas = Terapeuta.objects.all().order_by('nombre')
+    if query:
+        terapeutas = terapeutas.filter(
+            Q(nombre__icontains=query) |
+            Q(profesion__icontains=query) |
+            Q(correo__icontains=query)
+        )
+
+    contexto = {
+        'terapeutas': terapeutas,
+        'total_terapeutas': terapeutas.count(),
+        'query': query,
+        'seccion_activa': 'terapeutas',
+    }
+    return render(request, 'administrador/terapeutas_lista.html', contexto)
+
+
+@login_required
+def crear_terapeuta(request):
+    """Agregar: registra un nuevo terapeuta."""
+    if request.method == 'POST':
+        form = TerapeutaForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'El terapeuta se registró correctamente.')
+            return redirect('lista_terapeutas')
+        messages.error(request, 'No se pudo guardar el terapeuta. Revisa los errores del formulario.')
+    else:
+        form = TerapeutaForm()
+
+    contexto = {
+        'form': form,
+        'titulo': 'Agregar Terapeuta',
+        'seccion_activa': 'terapeutas',
+    }
+    return render(request, 'administrador/terapeuta_form.html', contexto)
+
+
+@login_required
+def editar_terapeuta(request, pk):
+    """Modificar: edita un terapeuta existente."""
+    terapeuta = get_object_or_404(Terapeuta, pk=pk)
+
+    if request.method == 'POST':
+        form = TerapeutaForm(request.POST, request.FILES, instance=terapeuta)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'El terapeuta se actualizó correctamente.')
+            return redirect('lista_terapeutas')
+        messages.error(request, 'No se pudo actualizar el terapeuta. Revisa los errores del formulario.')
+    else:
+        form = TerapeutaForm(instance=terapeuta)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Modificar Terapeuta',
+        'terapeuta': terapeuta,
+        'seccion_activa': 'terapeutas',
+    }
+    return render(request, 'administrador/terapeuta_form.html', contexto)
+
+
+@login_required
+def eliminar_terapeuta(request, pk):
+    """
+    Eliminar: borra un terapeuta, pidiendo confirmacion previa.
+    Reserva.terapeuta tambien usa on_delete=RESTRICT, mismo caso que Terapia.
+    """
+    terapeuta = get_object_or_404(Terapeuta, pk=pk)
+
+    if request.method == 'POST':
+        try:
+            terapeuta.delete()
+            messages.success(request, 'El terapeuta fue eliminado correctamente.')
+        except RestrictedError:
+            messages.error(
+                request,
+                f'No se puede eliminar a "{terapeuta.nombre}" porque tiene reservas '
+                'asociadas. Cancela o reasigna esas reservas antes de eliminarlo.'
+            )
+        return redirect('lista_terapeutas')
+
+    contexto = {
+        'terapeuta': terapeuta,
+        'total_reservas': terapeuta.reservas.count(),
+        'seccion_activa': 'terapeutas',
+    }
+    return render(request, 'administrador/terapeuta_confirm_delete.html', contexto)

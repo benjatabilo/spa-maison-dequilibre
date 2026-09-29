@@ -1,0 +1,76 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - {{ titulo }}{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">{{ titulo }}</h2>
+
+<div class="card card-spa p-4" style="max-width: 640px;">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre</label>
+      {{ form.nombre }}
+      {% if form.nombre.errors %}
+      <div class="text-danger small mt-1">{{ form.nombre.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.profesion.id_for_label }}" class="form-label">Profesión</label>
+      {{ form.profesion }}
+      {% if form.profesion.errors %}
+      <div class="text-danger small mt-1">{{ form.profesion.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.correo.id_for_label }}" class="form-label">Correo</label>
+      {{ form.correo }}
+      {% if form.correo.errors %}
+      <div class="text-danger small mt-1">{{ form.correo.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.foto.id_for_label }}" class="form-label">Foto</label>
+      {% if terapeuta and terapeuta.foto %}
+      <div class="mb-2">
+        <img src="{{ terapeuta.foto.url }}" alt="{{ terapeuta.nombre }}"
+             style="width:90px;height:90px;object-fit:cover;border-radius:50%;">
+      </div>
+      {% endif %}
+      {{ form.foto }}
+      {% if form.foto.errors %}
+      <div class="text-danger small mt-1">{{ form.foto.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-4">
+      <label for="{{ form.certificado.id_for_label }}" class="form-label">Certificado</label>
+      {% if terapeuta and terapeuta.certificado %}
+      <div class="mb-2">
+        <a href="{{ terapeuta.certificado.url }}" target="_blank" class="small">Ver certificado actual</a>
+      </div>
+      {% endif %}
+      {{ form.certificado }}
+      {% if form.certificado.errors %}
+      <div class="text-danger small mt-1">{{ form.certificado.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-spa-secondary">Guardar</button>
+      <a href="{% url 'lista_terapeutas' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
