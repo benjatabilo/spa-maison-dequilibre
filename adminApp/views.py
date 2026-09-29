@@ -1,9 +1,13 @@
 import os
 import json
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db.models import Q
 from PIL import Image
 from django.contrib.auth.decorators import login_required
+from .models import Terapia
+from .forms import TerapiaForm
 
 def _cargar_json(nombre_archivo, valor_por_defecto=None):
     """
@@ -143,3 +147,90 @@ def mi_perfil(request):
         'sin_datos': not perfil,
     }
     return render(request, 'administrador/perfil.html', contexto)
+
+
+# --- CRUD DE TERAPIAS (mantenedor con base de datos - Django ORM) ---
+
+@login_required
+def lista_terapias(request):
+    """
+    Mostrar Todos + Buscar: lista las terapias guardadas en la base de
+    datos, con un buscador opcional por nombre o descripcion.
+    """
+    query = request.GET.get('q', '').strip()
+
+    terapias = Terapia.objects.all().order_by('nombre')
+    if query:
+        terapias = terapias.filter(
+            Q(nombre__icontains=query) | Q(descripcion__icontains=query)
+        )
+
+    contexto = {
+        'terapias': terapias,
+        'total_terapias': terapias.count(),
+        'query': query,
+        'seccion_activa': 'terapias',
+    }
+    return render(request, 'administrador/terapias_lista.html', contexto)
+
+
+@login_required
+def crear_terapia(request):
+    """Agregar: crea una nueva terapia (mantenedor) en la base de datos."""
+    if request.method == 'POST':
+        form = TerapiaForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'La terapia se registró correctamente.')
+            return redirect('lista_terapias')
+        messages.error(request, 'No se pudo guardar la terapia. Revisa los errores del formulario.')
+    else:
+        form = TerapiaForm()
+
+    contexto = {
+        'form': form,
+        'titulo': 'Agregar Terapia',
+        'seccion_activa': 'terapias',
+    }
+    return render(request, 'administrador/terapia_form.html', contexto)
+
+
+@login_required
+def editar_terapia(request, pk):
+    """Modificar: edita una terapia existente, precargando sus datos."""
+    terapia = get_object_or_404(Terapia, pk=pk)
+
+    if request.method == 'POST':
+        form = TerapiaForm(request.POST, request.FILES, instance=terapia)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'La terapia se actualizó correctamente.')
+            return redirect('lista_terapias')
+        messages.error(request, 'No se pudo actualizar la terapia. Revisa los errores del formulario.')
+    else:
+        form = TerapiaForm(instance=terapia)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Modificar Terapia',
+        'terapia': terapia,
+        'seccion_activa': 'terapias',
+    }
+    return render(request, 'administrador/terapia_form.html', contexto)
+
+
+@login_required
+def eliminar_terapia(request, pk):
+    """Eliminar: borra una terapia, pidiendo confirmación previa."""
+    terapia = get_object_or_404(Terapia, pk=pk)
+
+    if request.method == 'POST':
+        terapia.delete()
+        messages.success(request, 'La terapia fue eliminada correctamente.')
+        return redirect('lista_terapias')
+
+    contexto = {
+        'terapia': terapia,
+        'seccion_activa': 'terapias',
+    }
+    return render(request, 'administrador/terapia_confirm_delete.html', contexto)
