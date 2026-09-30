@@ -3,12 +3,13 @@ import json
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
 from django.db.models.deletion import RestrictedError
 from PIL import Image
 from django.contrib.auth.decorators import login_required
 from .models import Terapia
-from .forms import TerapiaForm, TerapeutaForm, ClienteForm
+from .forms import TerapiaForm, TerapeutaForm, ClienteForm, usuario_de_terapeuta
 from terapeutaApp.models import Terapeuta
 from django.contrib.auth.models import User, Group
 
@@ -337,7 +338,7 @@ def crear_terapeuta(request):
         form = TerapeutaForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            messages.success(request, 'El terapeuta se registró correctamente.')
+            messages.success(request, 'El terapeuta se registró correctamente y ya puede iniciar sesión con su correo y contraseña.')
             return redirect('lista_terapeutas')
         messages.error(request, 'No se pudo guardar el terapeuta. Revisa los errores del formulario.')
     else:
@@ -385,7 +386,11 @@ def eliminar_terapeuta(request, pk):
 
     if request.method == 'POST':
         try:
-            terapeuta.delete()
+            usuario = usuario_de_terapeuta(terapeuta.correo)
+            with transaction.atomic():
+                terapeuta.delete()
+                if usuario:
+                    usuario.delete()  # también se elimina su cuenta de acceso
             messages.success(request, 'El terapeuta fue eliminado correctamente.')
         except RestrictedError:
             messages.error(

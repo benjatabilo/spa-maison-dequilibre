@@ -1,0 +1,68 @@
+{% extends 'terapeuta/base_terapeuta.html' %}
+
+{% block titulo %}Panel Terapeuta - Reservas{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">Reservas</h2>
+
+<form method="get" class="row g-2 mb-4">
+  <div class="col-md-4">
+    <input type="text" name="q" value="{{ q }}" class="form-control"
+           placeholder="Buscar por cliente o terapia">
+  </div>
+  <div class="col-md-3">
+    <select name="estado" class="form-select">
+      <option value="">Todos los estados</option>
+      {% for valor, etiqueta in estados %}
+      <option value="{{ valor }}" {% if estado_sel == valor %}selected{% endif %}>{{ etiqueta }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <input type="date" name="fecha" value="{{ fecha_sel }}" class="form-control">
+  </div>
+  <div class="col-md-2 d-flex gap-2">
+    <button type="submit" class="btn btn-spa-primary flex-fill">Buscar</button>
+    <a href="{% url 'reservas_terapeuta' %}" class="btn btn-spa-secondary">Limpiar</a>
+  </div>
+</form>
+
+<p class="mb-3"><span class="badge badge-libre">{{ total }} reserva{{ total|pluralize }}</span></p>
+
+<div class="table-responsive">
+  <table class="table table-spa align-middle">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Hora</th>
+        <th>Cliente</th>
+        <th>Terapia</th>
+        <th>Terapeuta</th>
+        <th>Estado</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reservas %}
+      <tr>
+        <td>{{ r.fecha|date:"d/m/Y" }}</td>
+        <td>{{ r.hora|time:"H:i" }}</td>
+        <td>{{ r.usuario.get_full_name|default:r.usuario.username }}</td>
+        <td>{{ r.terapia.nombre }}</td>
+        <td>{{ r.terapeuta.nombre }}</td>
+        <td>
+          <span class="badge {% if r.estado == 'CANCELADA' %}bg-danger{% elif r.estado == 'PENDIENTE' %}badge-libre{% else %}badge-activo{% endif %}">
+            {{ r.get_estado_display }}
+          </span>
+        </td>
+        <td>{{ r.observaciones|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-4">No se encontraron reservas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

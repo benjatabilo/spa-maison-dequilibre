@@ -1,7 +1,0 @@
-[
-  {"producto": "Aceite de almendras", "categoria": "Masajes", "stock": 12, "unidad": "litros", "estado": "Disponible"},
-  {"producto": "Piedras volcánicas", "categoria": "Piedras calientes", "stock": 3, "unidad": "sets", "estado": "Bajo stock"},
-  {"producto": "Toallas grandes", "categoria": "General", "stock": 40, "unidad": "unidades", "estado": "Disponible"},
-  {"producto": "Aceites esenciales", "categoria": "Aromaterapia", "stock": 2, "unidad": "frascos", "estado": "Bajo stock"},
-  {"producto": "Sábanas desechables", "categoria": "General", "stock": 0, "unidad": "paquetes", "estado": "Agotado"}
-]
