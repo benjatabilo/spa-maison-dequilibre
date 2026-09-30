@@ -1,34 +1,34 @@
 {% extends 'terapeuta/base_terapeuta.html' %}
 {% load static %}
 
-{% block titulo %}Panel Terapeuta - Rendimiento{% endblock %}
+{% block titulo %}Panel Terapeuta - Mi agenda{% endblock %}
 
 {% block panel_contenido %}
 
-<h2 class="mb-4">Mi rendimiento</h2>
+<h2 class="mb-4">Mi agenda</h2>
 
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
     <div class="stat-card tono-1">
       <p class="mb-1 small">Citas este mes</p>
-      <p class="fs-3 fw-bold mb-0">{{ rendimiento.citas_mes }}</p>
+      <p class="fs-3 fw-bold mb-0">{{ citas_mes }}</p>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card tono-2">
-      <p class="mb-1 small">Calificación</p>
-      <p class="fs-3 fw-bold mb-0">{{ rendimiento.calificacion }} / 5</p>
+      <p class="mb-1 small">Citas hoy</p>
+      <p class="fs-3 fw-bold mb-0">{{ citas_hoy }}</p>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card tono-3">
-      <p class="mb-1 small">Horas trabajadas</p>
-      <p class="fs-3 fw-bold mb-0">{{ rendimiento.horas_trabajadas }}</p>
+      <p class="mb-1 small">Confirmadas</p>
+      <p class="fs-3 fw-bold mb-0">{{ total_confirmadas }}</p>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card tono-4">
-      <p class="mb-1 small">Citas pendientes</p>
+      <p class="mb-1 small">Pendientes</p>
       <p class="fs-3 fw-bold mb-0">{{ total_pendientes }}</p>
     </div>
   </div>
@@ -39,11 +39,13 @@
     <div class="card card-spa p-3 h-100">
       <h5 class="mb-3">Terapias más realizadas</h5>
       <ul class="list-unstyled mb-0">
-        {% for terapia in rendimiento.terapias_top %}
+        {% for t in top_terapias %}
         <li class="mb-2">
-          <strong>{{ terapia.nombre }}</strong>
-          <span class="text-muted">— {{ terapia.veces }} veces</span>
+          <strong>{{ t.terapia__nombre }}</strong>
+          <span class="text-muted">— {{ t.veces }} {{ t.veces|pluralize:"vez,veces" }}</span>
         </li>
+        {% empty %}
+        <li class="text-muted">Aún no hay reservas registradas.</li>
         {% endfor %}
       </ul>
     </div>
@@ -51,40 +53,49 @@
 
   <div class="col-lg-7">
     <div class="card card-spa p-3 h-100">
-      <h5 class="mb-3">Resumen de la semana</h5>
-      <p class="mb-1"><strong>Total de citas:</strong> {{ total_citas_semana }}</p>
-      <p class="mb-1"><strong>Confirmadas:</strong> {{ total_confirmadas }}</p>
-      <p class="mb-0"><strong>Pendientes:</strong> {{ total_pendientes }}</p>
+      <h5 class="mb-3">Próximas citas</h5>
+      {% for r in proximas %}
+      <p class="mb-1">
+        <strong>{{ r.fecha|date:"d/m/Y" }} {{ r.hora|time:"H:i" }}</strong> —
+        {{ r.usuario.get_full_name|default:r.usuario.username }} · {{ r.terapia.nombre }}
+        <span class="text-muted">({{ r.get_estado_display }})</span>
+      </p>
+      {% empty %}
+      <p class="text-muted mb-0">No hay citas próximas.</p>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-<h4 class="mt-5 mb-3">Calendario de citas</h4>
+<h4 class="mt-5 mb-1">Calendario de la semana</h4>
+<p class="text-muted small">{{ semana_inicio|date:"d/m/Y" }} al {{ semana_fin|date:"d/m/Y" }}</p>
+
+{% if grilla %}
 <div class="table-responsive">
   <table class="table table-spa align-middle">
     <thead>
       <tr>
         <th>Hora</th>
-        {% for dia in dias %}
-        <th>{{ dia }}</th>
+        {% for e in encabezados %}
+        <th>{{ e.dia }}<div class="small fw-normal">{{ e.fecha|date:"d/m" }}</div></th>
         {% endfor %}
       </tr>
     </thead>
     <tbody>
       {% for fila in grilla %}
       <tr>
-        <th scope="row">{{ fila.hora }}</th>
+        <th scope="row">{{ fila.hora|time:"H:i" }}</th>
         {% for slot in fila.slots %}
-        <td class="{% if slot.ocupado %}ocupado{% endif %}">
-          {% if slot.ocupado %}
-          <span class="badge {% if slot.cita.estado == 'Confirmada' %}badge-activo{% else %}badge-libre{% endif %}">
-            {{ slot.cita.estado }}
+        <td class="{% if slot.citas %}ocupado{% endif %}">
+          {% for c in slot.citas %}
+          <span class="badge {% if c.estado == 'CONFIRMADA' or c.estado == 'COMPLETADA' %}badge-activo{% else %}badge-libre{% endif %}">
+            {{ c.get_estado_display }}
           </span>
-          <div class="small">{{ slot.cita.cliente }}</div>
-          <div class="small">{{ slot.cita.terapia }}</div>
-          {% else %}
+          <div class="small">{{ c.usuario.get_full_name|default:c.usuario.username }}</div>
+          <div class="small">{{ c.terapia.nombre }}</div>
+          {% empty %}
           <span class="text-muted small">Libre</span>
-          {% endif %}
+          {% endfor %}
         </td>
         {% endfor %}
       </tr>
@@ -92,5 +103,8 @@
     </tbody>
   </table>
 </div>
+{% else %}
+<div class="alert alert-light border">No hay citas agendadas esta semana.</div>
+{% endif %}
 
 {% endblock %}

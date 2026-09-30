@@ -39,6 +39,36 @@
       {% endif %}
     </div>
 
+    <div class="border rounded p-3 mb-3 bg-light">
+      <p class="fw-semibold mb-1">Acceso al sistema</p>
+      <p class="small text-muted mb-3">
+        El terapeuta inicia sesión con su <strong>correo</strong> y esta contraseña.
+        {% if terapeuta %}
+          {% if form.usuario_existente %}
+          Ya tiene una cuenta. Deja los campos en blanco para mantener la contraseña actual.
+          {% else %}
+          Aún no tiene cuenta. Ingresa una contraseña para crearla (opcional).
+          {% endif %}
+        {% endif %}
+      </p>
+
+      <div class="mb-3">
+        <label for="{{ form.password1.id_for_label }}" class="form-label">Contraseña</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}
+        <div class="text-danger small mt-1">{{ form.password1.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-0">
+        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmar contraseña</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+        <div class="text-danger small mt-1">{{ form.password2.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+
     <div class="mb-3">
       <label for="{{ form.foto.id_for_label }}" class="form-label">Foto</label>
       {% if terapeuta and terapeuta.foto %}

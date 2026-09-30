@@ -1,69 +1,49 @@
 {% extends 'terapeuta/base_terapeuta.html' %}
-{% load static %}
 
-{% block titulo %}Panel Terapeuta - Perfil{% endblock %}
+{% block titulo %}Panel Terapeuta - Mi perfil{% endblock %}
 
 {% block panel_contenido %}
 
 <h2 class="mb-4">Mi perfil</h2>
 
-<div class="row g-4 mb-5">
+<div class="row g-4">
   <div class="col-md-4">
     <div class="card card-spa p-3 text-center h-100">
       <span class="d-block mx-auto mb-3"
-            style="width:140px;height:140px;border-radius:50%;overflow:hidden;">
-        <img src="{% static perfil.foto %}" alt="{{ perfil.nombre }}"
+            style="width:140px;height:140px;border-radius:50%;overflow:hidden;background:#eee;">
+        {% if terapeuta and terapeuta.foto %}
+        <img src="{{ terapeuta.foto.url }}" alt="{{ terapeuta.nombre }}"
              style="width:100%;height:100%;object-fit:cover;display:block;">
+        {% endif %}
       </span>
-      <h5 class="mb-1">{{ perfil.nombre }}</h5>
-      <p class="text-muted mb-0">{{ perfil.cargo }}</p>
+      <h5 class="mb-1">{{ nombre_mostrado }}</h5>
+      <p class="text-muted mb-0">{{ terapeuta.profesion|default:"Sin ficha de terapeuta" }}</p>
     </div>
   </div>
+
   <div class="col-md-8">
     <div class="card card-spa p-3 h-100">
       <h5 class="mb-3">Datos de contacto</h5>
-      <p class="mb-1"><strong>Correo:</strong> {{ perfil.correo }}</p>
-      <p class="mb-1"><strong>Cargo:</strong> {{ perfil.cargo }}</p>
-      <p class="mb-0"><strong>Calificación promedio:</strong> {{ perfil.rendimiento.calificacion }} / 5</p>
+      <p class="mb-1"><strong>Usuario:</strong> {{ request.user.username }}</p>
+      <p class="mb-1"><strong>Correo:</strong> {{ terapeuta.correo|default:request.user.email|default:"—" }}</p>
+      <p class="mb-1"><strong>Profesión:</strong> {{ terapeuta.profesion|default:"—" }}</p>
+      <p class="mb-1"><strong>Reservas asignadas:</strong> {{ total_reservas }}</p>
+      <p class="mb-3"><strong>Atenciones completadas:</strong> {{ total_atenciones }}</p>
+
+      <h6>Certificado</h6>
+      {% if terapeuta and terapeuta.certificado %}
+      <a href="{{ terapeuta.certificado.url }}" target="_blank" class="btn btn-spa-secondary btn-sm">
+        Ver certificado
+      </a>
+      {% else %}
+      <p class="text-muted mb-0">No hay certificado cargado.</p>
+      {% endif %}
     </div>
   </div>
 </div>
 
-<h4 class="mb-3">Inventario de insumos</h4>
-<p class="mb-3">
-  <span class="badge badge-libre">{{ total_items }} productos</span>
-  <span class="badge bg-danger">{{ total_alertas }} con alerta de stock</span>
+<p class="text-muted small mt-4 mb-0">
+  Tus datos los gestiona el administrador del spa. Este perfil es de solo lectura.
 </p>
-
-<div class="table-responsive">
-  <table class="table table-spa align-middle">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Categoría</th>
-        <th>Stock</th>
-        <th>Unidad</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in inventario %}
-      <tr>
-        <td>{{ item.producto }}</td>
-        <td>{{ item.categoria }}</td>
-        <td>{{ item.stock }}</td>
-        <td>{{ item.unidad }}</td>
-        <td>
-          {% if item.estado == 'Disponible' %}
-          <span class="badge badge-activo">{{ item.estado }}</span>
-          {% else %}
-          <span class="badge bg-danger">{{ item.estado }}</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
 
 {% endblock %}

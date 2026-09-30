@@ -1,0 +1,56 @@
+{% extends 'terapeuta/base_terapeuta.html' %}
+
+{% block titulo %}Panel Terapeuta - Terapias{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">Terapias del spa</h2>
+
+<form method="get" class="row g-2 mb-4">
+  <div class="col-md-8">
+    <input type="text" name="q" value="{{ q }}" class="form-control"
+           placeholder="Buscar por nombre o descripción">
+  </div>
+  <div class="col-md-4 d-flex gap-2">
+    <button type="submit" class="btn btn-spa-primary flex-fill">Buscar</button>
+    <a href="{% url 'terapias_terapeuta' %}" class="btn btn-spa-secondary">Limpiar</a>
+  </div>
+</form>
+
+<p class="mb-3"><span class="badge badge-libre">{{ total }} terapia{{ total|pluralize }}</span></p>
+
+<div class="table-responsive">
+  <table class="table table-spa align-middle">
+    <thead>
+      <tr>
+        <th>Imagen</th>
+        <th>Nombre</th>
+        <th>Duración</th>
+        <th>Precio</th>
+        <th>Descripción</th>
+        <th>Reservas</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in terapias %}
+      <tr>
+        <td>
+          {% if t.imagen %}
+          <img src="{{ t.imagen.url }}" alt="{{ t.nombre }}" width="60" height="60"
+               style="object-fit:cover;border-radius:8px;">
+          {% else %}<span class="text-muted small">Sin imagen</span>{% endif %}
+        </td>
+        <td>{{ t.nombre }}</td>
+        <td>{{ t.duracion }}</td>
+        <td>${{ t.precio }}</td>
+        <td>{{ t.descripcion|default:"—"|truncatechars:80 }}</td>
+        <td>{{ t.total_reservas }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron terapias.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
