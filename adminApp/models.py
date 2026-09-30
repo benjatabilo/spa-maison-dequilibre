@@ -9,5 +9,8 @@ class Terapia(models.Model):
     imagen = models.ImageField(upload_to="terapias/", null=True, blank=True)
     creado = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        db_table = 'terapias'
+
     def __str__(self):
         return self.nombre

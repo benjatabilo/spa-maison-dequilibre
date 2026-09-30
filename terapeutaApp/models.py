@@ -8,5 +8,8 @@ class Terapeuta(models.Model):
     foto = models.ImageField(upload_to="terapeutas/fotos/", null=True, blank=True)
     certificado = models.FileField(upload_to="terapeutas/certificados/", null=True, blank=True)
 
+    class Meta:
+        db_table = 'terapeutas' #esto es para renombrar la tabla en php admin.
+
     def __str__(self):
         return self.nombre

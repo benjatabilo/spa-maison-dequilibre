@@ -80,7 +80,7 @@
   <div class="panel-admin-header">
     <div class="info-admin">
       <span class="icono-admin">A</span>
-      <p class="titulo-admin">Panel de Administración</p>
+      <p class="titulo-admin">Administración</p>
     </div>
 
     <a href="{% url 'logout' %}" class="btn btn-spa-secondary btn-sm">Cerrar sesión</a>
@@ -108,7 +108,7 @@
         </a>
         <a href="{% url 'clientes_admin' %}"
            class="{% if seccion_activa == 'clientes' %}activo{% endif %}">
-          Ficha de clientes
+          Gestion de Clientes
         </a>
         <a href="{% url 'perfil_admin' %}"
            class="{% if seccion_activa == 'perfil' %}activo{% endif %}">
