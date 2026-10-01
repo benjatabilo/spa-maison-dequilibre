@@ -122,13 +122,16 @@ def turnos(request):
 
 @login_required
 def clientes(request):
-    """
-    Gestion de clientes: lista los usuarios con rol Cliente desde la
-    base de datos (reemplaza el listado de Sumativa 1 basado en JSON).
-    """
+
     query = request.GET.get('q', '').strip()
 
-    lista_clientes = User.objects.filter(groups__name='Cliente').order_by('username')
+    lista_clientes = (
+        User.objects
+        .exclude(is_superuser=True)
+        .exclude(groups__name__in=['Administrador', 'Terapeuta'])
+        .distinct()
+        .order_by('username')
+    )
     if query:
         lista_clientes = lista_clientes.filter(
             Q(username__icontains=query) |
