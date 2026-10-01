@@ -126,10 +126,10 @@ def registro_view(request):
     return render(request, 'usuario/registro.html', {'form': form})
 
 def logout_view(request):
-    """Cierra la sesión activa del usuario."""
+    """Cierra la sesión activa del usuario y vuelve a la página de inicio de sesión."""
     logout(request)
     messages.info(request, "Has cerrado sesión correctamente.")
-    return redirect('inicio_usuario')
+    return redirect('login')
 
 @login_required
 def mi_panel(request):
