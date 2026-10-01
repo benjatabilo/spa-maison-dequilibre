@@ -1,0 +1,169 @@
+{% extends 'usuario/base_cliente.html' %}
+
+{% block titulo %}{{ titulo|default:"Agendar Cita" }} - Maison D'Equilibre{% endblock %}
+
+{% block panel_contenido %}
+<div class="card border-0 shadow-sm p-4 bg-white" style="max-width: 680px;">
+
+  <div class="mb-4">
+    <h4 class="fw-bold mb-1" style="color: #2d4030;">{{ titulo|default:"Agendar Cita" }}</h4>
+    <p class="text-muted small mb-0">Completa los siguientes datos para agendar tu sesión de bienestar.</p>
+  </div>
+
+  <form method="post" novalidate data-reserva-id="{{ form.instance.pk|default:'' }}">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger p-2 small">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    {% for field in form %}
+    <div class="mb-3">
+      <label for="{{ field.id_for_label }}" class="form-label fw-semibold" style="color: #466352;">
+        {{ field.label }}
+      </label>
+      {{ field }}
+      {% if field.help_text %}
+      <div class="form-text small">{{ field.help_text }}</div>
+      {% endif %}
+      {% for error in field.errors %}
+      <div class="text-danger small mt-1">{{ error }}</div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <div class="d-grid gap-2 mt-4">
+      <button type="submit" class="btn text-white fw-bold py-2" style="background-color: #466352; border: none;">
+        Confirmar Reserva
+      </button>
+      <a href="{% url 'mis_reservas' %}" class="btn btn-outline-secondary py-2">Cancelar</a>
+    </div>
+  </form>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var selectTerapia = document.getElementById('id_terapia');
+    var selectTerapeuta = document.getElementById('id_terapeuta');
+    var inputFecha = document.getElementById('id_fecha');
+    var selectHora = document.getElementById('id_hora');
+    var formulario = document.querySelector('form[data-reserva-id]');
+    var reservaId = formulario ? formulario.dataset.reservaId : '';
+
+    if (!selectTerapia || !selectTerapeuta || !inputFecha || !selectHora) {
+      return;
+    }
+
+    var actualizando = false; // evita que un select dispare al otro en bucle
+
+    function urlTerapeutasDeTerapia(terapiaId) {
+      return '/usuario/reservas/ajax/terapeutas-de-terapia/' + terapiaId + '/';
+    }
+    function urlTerapiasDeTerapeuta(terapeutaId) {
+      return '/usuario/reservas/ajax/terapias-de-terapeuta/' + terapeutaId + '/';
+    }
+    function urlHorasOcupadas(terapeutaId, fecha) {
+      var url = '/usuario/reservas/ajax/horas-ocupadas/?terapeuta_id=' + terapeutaId + '&fecha=' + fecha;
+      if (reservaId) {
+        url += '&excluir_reserva_id=' + reservaId;
+      }
+      return url;
+    }
+
+    function repoblarSelect(select, opciones, etiquetaVacia) {
+      var valorAnterior = select.value;
+      select.innerHTML = '';
+      var optVacia = document.createElement('option');
+      optVacia.value = '';
+      optVacia.textContent = etiquetaVacia;
+      select.appendChild(optVacia);
+      opciones.forEach(function (op) {
+        var opt = document.createElement('option');
+        opt.value = op.id;
+        opt.textContent = op.nombre;
+        if (String(op.id) === String(valorAnterior)) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    }
+
+    function alElegirTerapia() {
+      if (actualizando) { return; }
+      var terapiaId = selectTerapia.value;
+      if (!terapiaId) {
+        actualizarHoras();
+        return;
+      }
+      actualizando = true;
+      fetch(urlTerapeutasDeTerapia(terapiaId))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          repoblarSelect(selectTerapeuta, data.terapeutas, 'Selecciona un terapeuta');
+          actualizando = false;
+          actualizarHoras();
+        })
+        .catch(function () { actualizando = false; });
+    }
+
+    function alElegirTerapeuta() {
+      if (actualizando) { return; }
+      var terapeutaId = selectTerapeuta.value;
+      if (!terapeutaId) {
+        actualizarHoras();
+        return;
+      }
+      actualizando = true;
+      fetch(urlTerapiasDeTerapeuta(terapeutaId))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          repoblarSelect(selectTerapia, data.terapias, 'Selecciona una terapia');
+          actualizando = false;
+          actualizarHoras();
+        })
+        .catch(function () { actualizando = false; });
+    }
+
+    function actualizarHoras() {
+      var terapeutaId = selectTerapeuta.value;
+      var fecha = inputFecha.value;
+      var horaSeleccionada = selectHora.value;
+
+      Array.prototype.forEach.call(selectHora.options, function (opt) {
+        opt.disabled = false;
+      });
+
+      if (!terapeutaId || !fecha) {
+        return;
+      }
+
+      fetch(urlHorasOcupadas(terapeutaId, fecha))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var ocupadas = data.horas_ocupadas || [];
+          Array.prototype.forEach.call(selectHora.options, function (opt) {
+            if (ocupadas.indexOf(opt.value) !== -1) {
+              opt.disabled = true;
+              if (opt.value === horaSeleccionada) {
+                selectHora.value = '';
+              }
+            }
+          });
+        });
+    }
+
+    selectTerapia.addEventListener('change', alElegirTerapia);
+    selectTerapeuta.addEventListener('change', alElegirTerapeuta);
+    inputFecha.addEventListener('change', actualizarHoras);
+
+    // Si el formulario ya trae una terapia elegida (editar, o venir con
+    // ?terapia_id=), filtra el select de terapeuta al cargar la pagina.
+    if (selectTerapia.value) {
+      alElegirTerapia();
+    } else {
+      actualizarHoras();
+    }
+  });
+</script>
+{% endblock %}

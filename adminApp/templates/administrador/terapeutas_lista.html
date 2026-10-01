@@ -1,0 +1,95 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - Terapeutas{% endblock %}
+
+{% block panel_contenido %}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <h2 class="mb-0">Gestión de terapeutas</h2>
+  <a href="{% url 'crear_terapeuta' %}" class="btn btn-spa-secondary">
+    + Agregar terapeuta
+  </a>
+</div>
+
+<form method="get" class="mb-4 d-flex flex-wrap gap-2 align-items-start">
+  <div class="input-group" style="max-width: 360px;">
+    <input type="text" name="q" class="form-control" value="{{ query }}"
+           placeholder="Buscar por nombre, profesión o correo...">
+    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+  </div>
+
+  <select name="profesion" class="form-select" style="max-width: 220px;" onchange="this.form.submit()">
+    <option value="">Todas las profesiones</option>
+    {% for profesion in profesiones %}
+    <option value="{{ profesion }}" {% if profesion_sel == profesion %}selected{% endif %}>{{ profesion }}</option>
+    {% endfor %}
+  </select>
+
+  {% if query or profesion_sel %}
+  <a href="{% url 'lista_terapeutas' %}" class="btn btn-outline-secondary">Limpiar filtros</a>
+  {% endif %}
+</form>
+
+<p class="mb-3">
+  <span class="badge badge-libre">{{ total_terapeutas }} terapeuta{{ total_terapeutas|pluralize }} registrado{{ total_terapeutas|pluralize }}</span>
+</p>
+
+<div class="table-responsive">
+  <table class="table table-spa align-middle">
+    <thead>
+      <tr>
+        <th>Foto</th>
+        <th>Nombre</th>
+        <th>Profesión</th>
+        <th>Correo</th>
+        <th>Certificado</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for terapeuta in terapeutas %}
+      <tr>
+        <td style="width: 70px;">
+          {% if terapeuta.foto %}
+          <img src="{{ terapeuta.foto.url }}" alt="{{ terapeuta.nombre }}"
+               style="width:56px;height:56px;object-fit:cover;border-radius:50%;">
+          {% else %}
+          <span class="text-muted small">Sin foto</span>
+          {% endif %}
+        </td>
+        <td>{{ terapeuta.nombre }}</td>
+        <td>{{ terapeuta.profesion }}</td>
+        <td>{{ terapeuta.correo }}</td>
+        <td>
+          {% if terapeuta.certificado %}
+          <a href="{{ terapeuta.certificado.url }}" target="_blank" class="small">Ver archivo</a>
+          {% else %}
+          <span class="text-muted small">Sin certificado</span>
+          {% endif %}
+        </td>
+        <td class="text-end">
+          <a href="{% url 'editar_terapeuta' terapeuta.pk %}" class="btn btn-sm btn-outline-secondary">
+            Editar
+          </a>
+          <a href="{% url 'eliminar_terapeuta' terapeuta.pk %}" class="btn btn-sm btn-outline-danger">
+            Eliminar
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="text-center text-muted">
+          {% if query %}
+          No se encontraron terapeutas que coincidan con "{{ query }}".
+          {% else %}
+          Aún no hay terapeutas registrados.
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

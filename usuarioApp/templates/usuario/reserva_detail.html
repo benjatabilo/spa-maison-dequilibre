@@ -1,0 +1,63 @@
+{% extends 'usuario/base_cliente.html' %}
+
+{% block titulo %}Detalle de Reserva - Maison D'Equilibre{% endblock %}
+
+{% block panel_contenido %}
+<div class="card border-0 shadow-sm" style="max-width: 760px;">
+
+  <div class="card-header text-white d-flex justify-content-between align-items-center"
+    style="background-color: #466352;">
+    <h5 class="mb-0">Detalle de la Reserva</h5>
+    {% if reserva.estado == 'CANCELADA' %}
+      <span class="badge bg-danger">Cancelada</span>
+    {% elif reserva.estado == 'COMPLETADA' %}
+      <span class="badge bg-success">Completada</span>
+    {% elif reserva.estado == 'CONFIRMADA' %}
+      <span class="badge bg-primary">Confirmada</span>
+    {% else %}
+      <span class="badge bg-warning text-dark">Pendiente</span>
+    {% endif %}
+  </div>
+
+  <div class="card-body">
+    <ul class="list-group list-group-flush mb-4">
+      <li class="list-group-item d-flex justify-content-between">
+        <strong>Terapia:</strong>
+        <span>{{ reserva.terapia.nombre }}</span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <strong>Terapeuta a cargo:</strong>
+        <span>{{ reserva.terapeuta.nombre }}</span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <strong>Fecha:</strong>
+        <span>{{ reserva.fecha|date:"d/m/Y" }}</span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <strong>Hora:</strong>
+        <span>{{ reserva.hora|time:"H:i" }} hrs</span>
+      </li>
+      {% if reserva.observaciones %}
+      <li class="list-group-item">
+        <strong>Observaciones:</strong>
+        <p class="mb-0 mt-1 text-muted">{{ reserva.observaciones }}</p>
+      </li>
+      {% endif %}
+    </ul>
+
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <a href="{% url 'mis_reservas' %}" class="btn btn-outline-secondary">&larr; Volver a Mis Reservas</a>
+      {% if reserva.estado == 'PENDIENTE' or reserva.estado == 'CONFIRMADA' %}
+      <div>
+        <a href="{% url 'editar_reserva' reserva.pk %}" class="btn btn-warning me-2">Modificar</a>
+        <a href="{% url 'cancelar_reserva' reserva.pk %}" class="btn btn-danger">Cancelar Cita</a>
+      </div>
+      {% endif %}
+        {% if reserva.estado == 'CANCELADA' %}
+      <a href="{% url 'eliminar_reserva' reserva.pk %}" class="btn btn-danger">Eliminar registro</a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

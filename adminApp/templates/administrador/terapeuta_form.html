@@ -1,0 +1,139 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - {{ titulo }}{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">{{ titulo }}</h2>
+
+<div class="card card-spa p-4" style="max-width: 640px;">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.nombre_pila.id_for_label }}" class="form-label">Nombre</label>
+        {{ form.nombre_pila }}
+        {% if form.nombre_pila.errors %}
+        <div class="text-danger small mt-1">{{ form.nombre_pila.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.apellido.id_for_label }}" class="form-label">Apellido</label>
+        {{ form.apellido }}
+        {% if form.apellido.errors %}
+        <div class="text-danger small mt-1">{{ form.apellido.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Terapias que realiza</label>
+      <p class="small text-muted mb-2">
+        Solo estas terapias le aparecerán disponibles a los clientes cuando reserven con este terapeuta.
+      </p>
+      <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
+        {% for checkbox in form.terapias %}
+        <div class="form-check">
+          {{ checkbox.tag }}
+          <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+            {{ checkbox.choice_label }}
+          </label>
+        </div>
+        {% empty %}
+        <p class="text-muted small mb-0">
+          Aún no hay terapias registradas. Crea alguna desde "Gestión de terapias" primero.
+        </p>
+        {% endfor %}
+      </div>
+      {% if form.terapias.errors %}
+      <div class="text-danger small mt-1">{{ form.terapias.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.profesion.id_for_label }}" class="form-label">Profesión</label>
+      {{ form.profesion }}
+      {% if form.profesion.errors %}
+      <div class="text-danger small mt-1">{{ form.profesion.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.correo.id_for_label }}" class="form-label">Correo</label>
+      {{ form.correo }}
+      {% if form.correo.errors %}
+      <div class="text-danger small mt-1">{{ form.correo.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="border rounded p-3 mb-3 bg-light">
+      <p class="fw-semibold mb-1">Acceso al sistema</p>
+      <p class="small text-muted mb-3">
+        El terapeuta inicia sesión con su <strong>correo</strong> y esta contraseña.
+        {% if terapeuta %}
+          {% if form.usuario_existente %}
+          Ya tiene una cuenta. Deja los campos en blanco para mantener la contraseña actual.
+          {% else %}
+          Aún no tiene cuenta. Ingresa una contraseña para crearla (opcional).
+          {% endif %}
+        {% endif %}
+      </p>
+
+      <div class="mb-3">
+        <label for="{{ form.password1.id_for_label }}" class="form-label">Contraseña</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}
+        <div class="text-danger small mt-1">{{ form.password1.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-0">
+        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmar contraseña</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+        <div class="text-danger small mt-1">{{ form.password2.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.foto.id_for_label }}" class="form-label">Foto</label>
+      {% if terapeuta and terapeuta.foto %}
+      <div class="mb-2">
+        <img src="{{ terapeuta.foto.url }}" alt="{{ terapeuta.nombre }}"
+             style="width:90px;height:90px;object-fit:cover;border-radius:50%;">
+      </div>
+      {% endif %}
+      {{ form.foto }}
+      {% if form.foto.errors %}
+      <div class="text-danger small mt-1">{{ form.foto.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-4">
+      <label for="{{ form.certificado.id_for_label }}" class="form-label">Certificado</label>
+      {% if terapeuta and terapeuta.certificado %}
+      <div class="mb-2">
+        <a href="{{ terapeuta.certificado.url }}" target="_blank" class="small">Ver certificado actual</a>
+      </div>
+      {% endif %}
+      {{ form.certificado }}
+      {% if form.certificado.errors %}
+      <div class="text-danger small mt-1">{{ form.certificado.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-spa-secondary">Guardar</button>
+      <a href="{% url 'lista_terapeutas' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

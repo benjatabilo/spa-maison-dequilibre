@@ -1,0 +1,86 @@
+{% extends 'administrador/base_admin.html' %}
+{% load static %}
+
+{% block titulo %}Panel Administrador - Clientes{% endblock %}
+
+{% block panel_contenido %}
+
+<h2 class="mb-4">Gestión de clientes</h2>
+
+<form method="get" class="mb-4 d-flex flex-wrap gap-2 align-items-start">
+  <div class="input-group" style="max-width: 360px;">
+    <input type="text" name="q" class="form-control" value="{{ query }}"
+           placeholder="Buscar por nombre, usuario o correo...">
+    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+  </div>
+
+  <select name="estado" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+    <option value="">Cualquier estado</option>
+    <option value="activa" {% if estado_sel == 'activa' %}selected{% endif %}>Solo activas</option>
+    <option value="desactivada" {% if estado_sel == 'desactivada' %}selected{% endif %}>Solo desactivadas</option>
+  </select>
+
+  {% if query or estado_sel %}
+  <a href="{% url 'clientes_admin' %}" class="btn btn-outline-secondary">Limpiar filtros</a>
+  {% endif %}
+</form>
+
+<p class="mb-3">
+  <span class="badge badge-libre">{{ total_clientes }} cliente{{ total_clientes|pluralize }} registrado{{ total_clientes|pluralize }}</span>
+  <span class="badge badge-activo ms-2">{{ total_activos }} cuenta{{ total_activos|pluralize }} activa{{ total_activos|pluralize }}</span>
+</p>
+
+<div class="table-responsive">
+  <table class="table table-spa align-middle">
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Estado</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cliente in clientes %}
+      <tr>
+        <td>{{ cliente.username }}</td>
+        <td>{{ cliente.first_name }} {{ cliente.last_name }}</td>
+        <td>{{ cliente.email }}</td>
+        <td>
+          {% if cliente.is_active %}
+          <span class="badge badge-activo">Activa</span>
+          {% else %}
+          <span class="badge bg-danger">Desactivada</span>
+          {% endif %}
+        </td>
+        <td class="text-end">
+          <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-sm btn-outline-secondary">
+            Editar
+          </a>
+          <form method="post" action="{% url 'cambiar_estado_cliente' cliente.pk %}" class="d-inline">
+            {% csrf_token %}
+            {% if cliente.is_active %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
+            {% else %}
+            <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          {% if query %}
+          No se encontraron clientes que coincidan con "{{ query }}".
+          {% else %}
+          Aún no hay clientes registrados.
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

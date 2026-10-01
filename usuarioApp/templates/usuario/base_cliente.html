@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contenido %}
+<style>
+  .panel-cliente-header {
+    background-color: var(--color-beige-calido);
+    color: var(--color-grafito);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .panel-cliente-header .info-cliente {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+    .icono-cliente {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--color-olivo-claro);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: bold;
+    border: 2px solid #ffffff;
+  }
+  .panel-cliente-header .titulo-cliente {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sidebar-cliente {
+    background-color: var(--color-beige-calido);
+    padding: 1.25rem 0;
+  }
+  .sidebar-cliente a {
+    display: block;
+    padding: 0.65rem 1.25rem;
+    color: var(--color-grafito);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s ease;
+  }
+  .sidebar-cliente a:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+  .sidebar-cliente a.activo {
+    background-color: #ffffff;
+    border-left-color: var(--color-olivo-claro);
+    font-weight: 600;
+  }
+</style>
+
+<div class="d-flex flex-column flex-grow-1">
+
+  <div class="panel-cliente-header">
+    <div class="info-cliente">
+      <span class="icono-cliente">{{ user.username|first|upper }}</span>
+      <p class="titulo-cliente">Panel del Cliente · {{ user.first_name|default:user.username }}</p>
+    </div>
+  </div>
+
+  <div class="container-fluid flex-grow-1 d-flex flex-column">
+    <div class="row flex-grow-1">
+
+      <div class="col-md-3 col-lg-2 p-0 sidebar-cliente">
+        {% with nombre_url=request.resolver_match.url_name %}
+        <a href="{% url 'mi_perfil' %}"
+           class="{% if nombre_url == 'mi_perfil' %}activo{% endif %}">
+          Mi resumen
+        </a>
+        <a href="{% url 'crear_reserva' %}"
+           class="{% if nombre_url == 'crear_reserva' %}activo{% endif %}">
+          Agendar nueva cita
+        </a>
+        <a href="{% url 'mis_reservas' %}"
+           class="{% if nombre_url == 'mis_reservas' or nombre_url == 'detalle_reserva' or nombre_url == 'editar_reserva' or nombre_url == 'cancelar_reserva' or nombre_url == 'eliminar_reserva' %}activo{% endif %}">
+          Mis citas agendadas
+        </a>
+        {% endwith %}
+      </div>
+
+      <div class="col-md-9 col-lg-10 py-4">
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block panel_contenido %}{% endblock %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
