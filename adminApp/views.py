@@ -1,16 +1,19 @@
 import os
 import json
+from datetime import timedelta
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.db.models.deletion import RestrictedError
+from django.utils import timezone
 from PIL import Image
 from django.contrib.auth.decorators import login_required
 from .models import Terapia
 from .forms import TerapiaForm, TerapeutaForm, ClienteForm, usuario_de_terapeuta
 from terapeutaApp.models import Terapeuta
+from usuarioApp.models import Reserva
 from django.contrib.auth.models import User, Group
 
 def _cargar_json(nombre_archivo, valor_por_defecto=None):
@@ -58,77 +61,121 @@ def _info_imagen(nombre_archivo):
 DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 
-def _construir_grafico_citas(citas):
-    conteo = {dia: 0 for dia in DIAS_SEMANA}
-    for cita in citas:
-        dia = cita.get('dia')
-        if dia in conteo:
-            conteo[dia] += 1
+def _construir_grafico_citas_semana(reservas_activas, lunes):
+    """
+    Cuenta cuantas reservas (no canceladas) hay por cada dia de la semana
+    actual (Lunes a Domingo) y calcula el porcentaje de altura de cada
+    barra, igual que en la version anterior basada en JSON, pero ahora
+    con datos reales desde Reserva.
+    """
+    fechas_semana = [lunes + timedelta(days=i) for i in range(7)]
+    conteo = {fecha: 0 for fecha in fechas_semana}
+
+    de_la_semana = reservas_activas.filter(fecha__range=(fechas_semana[0], fechas_semana[-1]))
+    for reserva in de_la_semana:
+        if reserva.fecha in conteo:
+            conteo[reserva.fecha] += 1
 
     maximo = max(conteo.values()) if conteo.values() else 0
     maximo = maximo if maximo > 0 else 1
 
     grafico = []
-    for dia in DIAS_SEMANA:
-        cantidad = conteo[dia]
+    for fecha in fechas_semana:
+        cantidad = conteo[fecha]
         grafico.append({
-            'dia': dia,
+            'dia': DIAS_SEMANA[fecha.weekday()],
             'cantidad': cantidad,
             'porcentaje': round((cantidad / maximo) * 100),
         })
     return grafico
 
+
 @login_required
 def panel(request):
-    resumen = _cargar_json('resumen.json', {})
-    citas = _cargar_json('citas.json', [])
+    """
+    Resumen general: indicadores, grafico de citas de la semana y tabla de
+    proximas citas, todo calculado en vivo desde la base de datos (Terapia,
+    Terapeuta, Reserva), reemplazando los JSON de la Sumativa 1.
+    """
+    hoy = timezone.localdate()
+    lunes = hoy - timedelta(days=hoy.weekday())
 
-    citas_ordenadas = sorted(
-        citas,
-        key=lambda cita: DIAS_SEMANA.index(cita.get('dia')) if cita.get('dia') in DIAS_SEMANA else 99
+    # Igual criterio que usa terapeutaApp: una reserva CANCELADA no cuenta
+    # como cita real para efectos de indicadores ni ingresos.
+    reservas_activas = Reserva.objects.exclude(estado='CANCELADA')
+
+    citas_hoy_qs = reservas_activas.filter(fecha=hoy)
+    ingresos_dia = citas_hoy_qs.aggregate(total=Sum('terapia__precio'))['total'] or 0
+
+    grafico_citas = _construir_grafico_citas_semana(reservas_activas, lunes)
+
+    citas = (
+        reservas_activas
+        .filter(fecha__gte=hoy)
+        .select_related('usuario', 'terapia', 'terapeuta')
+        .order_by('fecha', 'hora')[:15]
     )
-    grafico_citas = _construir_grafico_citas(citas)
+
     info_imagen = _info_imagen('espacio_recepcion.jpg')
 
     contexto = {
-        'resumen': resumen,
-        'citas': citas_ordenadas,
-        'total_citas': len(citas),
+        'total_terapeutas': Terapeuta.objects.count(),
+        'total_terapias': Terapia.objects.count(),
+        'citas_hoy': citas_hoy_qs.count(),
+        'ingresos_dia': ingresos_dia,
+        'citas': citas,
         'grafico_citas': grafico_citas,
         'info_imagen': info_imagen,
         'seccion_activa': 'panel',
-        'sin_datos': not resumen and not citas,
     }
     return render(request, 'administrador/panel.html', contexto)
 
 @login_required
 def turnos(request):
-    lista_turnos = _cargar_json('turnos.json', [])
+    """
+    Antes "Turnos y salas", con datos ficticios de un JSON (no existe
+    ningun concepto de 'sala' en la base de datos real). Ahora muestra,
+    por cada terapeuta, cuantas citas tiene hoy y cual es su proxima
+    cita, calculado en vivo desde Reserva.
+    """
+    hoy = timezone.localdate()
+    reservas_activas = Reserva.objects.exclude(estado='CANCELADA')
 
-    turnos_activos = [t for t in lista_turnos if t.get('estado') == 'Activo']
-    turnos_libres = [t for t in lista_turnos if t.get('estado') != 'Activo']
+    filas = []
+    for terapeuta in Terapeuta.objects.all().order_by('nombre'):
+        reservas_terapeuta = reservas_activas.filter(terapeuta=terapeuta)
+        proxima = reservas_terapeuta.filter(fecha__gte=hoy).order_by('fecha', 'hora').first()
+        filas.append({
+            'terapeuta': terapeuta,
+            'citas_hoy': reservas_terapeuta.filter(fecha=hoy).count(),
+            'proxima': proxima,
+        })
+
+    con_citas_hoy = sum(1 for fila in filas if fila['citas_hoy'] > 0)
     info_imagen = _info_imagen('espacio_masaje.jpg')
 
     contexto = {
-        'turnos': lista_turnos,
-        'total_turnos': len(lista_turnos),
-        'total_activos': len(turnos_activos),
-        'total_libres': len(turnos_libres),
+        'filas': filas,
+        'total_terapeutas': len(filas),
+        'con_citas_hoy': con_citas_hoy,
         'info_imagen': info_imagen,
         'seccion_activa': 'turnos',
-        'sin_datos': not lista_turnos,
     }
     return render(request, 'administrador/turnos.html', contexto)
 
 @login_required
 def clientes(request):
-    """
-    Gestion de clientes: lista los usuarios con rol Cliente desde la
-    base de datos (reemplaza el listado de Sumativa 1 basado en JSON).
-    """
-    query = request.GET.get('q', '').strip()
 
-    lista_clientes = User.objects.filter(groups__name='Cliente').order_by('username')
+    query = request.GET.get('q', '').strip()
+    estado_sel = request.GET.get('estado', '').strip()
+
+    lista_clientes = (
+        User.objects
+        .exclude(is_superuser=True)
+        .exclude(groups__name__in=['Administrador', 'Terapeuta'])
+        .distinct()
+        .order_by('username')
+    )
     if query:
         lista_clientes = lista_clientes.filter(
             Q(username__icontains=query) |
@@ -136,6 +183,10 @@ def clientes(request):
             Q(last_name__icontains=query) |
             Q(email__icontains=query)
         )
+    if estado_sel == 'activa':
+        lista_clientes = lista_clientes.filter(is_active=True)
+    elif estado_sel == 'desactivada':
+        lista_clientes = lista_clientes.filter(is_active=False)
 
     total_activos = lista_clientes.filter(is_active=True).count()
 
@@ -144,6 +195,7 @@ def clientes(request):
         'total_clientes': lista_clientes.count(),
         'total_activos': total_activos,
         'query': query,
+        'estado_sel': estado_sel,
         'seccion_activa': 'clientes',
     }
     return render(request, 'administrador/clientes.html', contexto)
@@ -212,9 +264,11 @@ def mi_perfil(request):
 def lista_terapias(request):
     """
     Mostrar Todos + Buscar: lista las terapias guardadas en la base de
-    datos, con un buscador opcional por nombre o descripcion.
+    datos, con un buscador por nombre/descripcion y un filtro adicional
+    por rango de precio.
     """
     query = request.GET.get('q', '').strip()
+    rango_precio = request.GET.get('precio', '').strip()
 
     terapias = Terapia.objects.all().order_by('nombre')
     if query:
@@ -222,14 +276,21 @@ def lista_terapias(request):
             Q(nombre__icontains=query) | Q(descripcion__icontains=query)
         )
 
+    if rango_precio == 'bajo':
+        terapias = terapias.filter(precio__lt=20000)
+    elif rango_precio == 'medio':
+        terapias = terapias.filter(precio__gte=20000, precio__lte=40000)
+    elif rango_precio == 'alto':
+        terapias = terapias.filter(precio__gt=40000)
+
     contexto = {
         'terapias': terapias,
         'total_terapias': terapias.count(),
         'query': query,
+        'rango_precio': rango_precio,
         'seccion_activa': 'terapias',
     }
     return render(request, 'administrador/terapias_lista.html', contexto)
-
 
 @login_required
 def crear_terapia(request):
@@ -311,8 +372,17 @@ def eliminar_terapia(request, pk):
 
 @login_required
 def lista_terapeutas(request):
-    """Mostrar Todos + Buscar: lista los terapeutas registrados."""
+    """Mostrar Todos + Buscar: lista los terapeutas registrados, con un
+    buscador de texto y un filtro adicional por profesión."""
     query = request.GET.get('q', '').strip()
+    profesion_sel = request.GET.get('profesion', '').strip()
+
+    # Lista de profesiones distintas ya registradas, para armar el filtro
+    profesiones = (Terapeuta.objects
+                   .exclude(profesion='')
+                   .order_by('profesion')
+                   .values_list('profesion', flat=True)
+                   .distinct())
 
     terapeutas = Terapeuta.objects.all().order_by('nombre')
     if query:
@@ -321,15 +391,18 @@ def lista_terapeutas(request):
             Q(profesion__icontains=query) |
             Q(correo__icontains=query)
         )
+    if profesion_sel:
+        terapeutas = terapeutas.filter(profesion=profesion_sel)
 
     contexto = {
         'terapeutas': terapeutas,
         'total_terapeutas': terapeutas.count(),
         'query': query,
+        'profesiones': profesiones,
+        'profesion_sel': profesion_sel,
         'seccion_activa': 'terapeutas',
     }
     return render(request, 'administrador/terapeutas_lista.html', contexto)
-
 
 @login_required
 def crear_terapeuta(request):

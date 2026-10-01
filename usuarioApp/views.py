@@ -9,13 +9,14 @@ from django.contrib import messages
 from django.contrib.auth.models import User, Group
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models import Q
-from django.utils.dateparse import parse_date
+from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
+from django.http import JsonResponse
 # Importamos los modelos de las otras apps y de la propia usuarioApp
 from adminApp.models import Terapia
 from terapeutaApp.models import Terapeuta
 from .models import Reserva
-from .forms import ReservaForm, PerfilUsuarioForm, RegistroForm
+from .forms import ReservaForm, PerfilUsuarioForm, RegistroForm, HORAS_DISPONIBLES
 from .roles import obtener_rol, ADMINISTRADOR, TERAPEUTA
 
 # --- FUNCIÓN AUXILIAR PARA REDIRECCIÓN SEGÚN ROL DE USUARIO ---
@@ -126,10 +127,10 @@ def registro_view(request):
     return render(request, 'usuario/registro.html', {'form': form})
 
 def logout_view(request):
-    """Cierra la sesión activa del usuario."""
+    """Cierra la sesión activa del usuario y vuelve a la página de inicio de sesión."""
     logout(request)
     messages.info(request, "Has cerrado sesión correctamente.")
-    return redirect('inicio_usuario')
+    return redirect('login')
 
 @login_required
 def mi_panel(request):
@@ -137,6 +138,58 @@ def mi_panel(request):
     return _redirect_by_role(request.user)
 
 # --- CRUD DE RESERVAS DEL CLIENTE ---
+
+# --- CRUD DE RESERVAS DEL CLIENTE ---
+
+@login_required
+def ajax_terapeutas_de_terapia(request, terapia_id):
+    """
+    Devuelve en JSON los terapeutas que realizan una terapia especifica.
+    Usado por el formulario de reserva para filtrar el select de terapeuta
+    apenas el cliente elige una terapia.
+    """
+    terapia = get_object_or_404(Terapia, pk=terapia_id)
+    terapeutas = terapia.terapeutas.all().order_by('nombre').values('id', 'nombre')
+    return JsonResponse({'terapeutas': list(terapeutas)})
+
+
+@login_required
+def ajax_terapias_de_terapeuta(request, terapeuta_id):
+    """
+    Devuelve en JSON las terapias que realiza un terapeuta especifico.
+    Usado por el formulario de reserva para filtrar el select de terapia
+    apenas el cliente elige un terapeuta directamente.
+    """
+    terapeuta = get_object_or_404(Terapeuta, pk=terapeuta_id)
+    terapias = terapeuta.terapias.all().order_by('nombre').values('id', 'nombre', 'precio', 'duracion')
+    return JsonResponse({'terapias': list(terapias)})
+
+
+@login_required
+def ajax_horas_ocupadas(request):
+    """
+    Devuelve en JSON las horas (de las 8 franjas de 9:00 a 16:00) que YA
+    estan tomadas para un terapeuta en una fecha dada, para que el
+    formulario de reserva las deshabilite en el select de hora.
+    """
+    terapeuta_id = request.GET.get('terapeuta_id')
+    fecha = parse_date(request.GET.get('fecha', ''))
+    excluir_reserva_id = request.GET.get('excluir_reserva_id')
+
+    if not (terapeuta_id and fecha):
+        return JsonResponse({'horas_ocupadas': []})
+
+    ocupadas_qs = Reserva.objects.filter(
+        terapeuta_id=terapeuta_id, fecha=fecha
+    ).exclude(estado='CANCELADA')
+
+    if excluir_reserva_id:
+        ocupadas_qs = ocupadas_qs.exclude(pk=excluir_reserva_id)
+
+    horas_ocupadas = [r.hora.strftime('%H:%M') for r in ocupadas_qs]
+
+    return JsonResponse({'horas_ocupadas': horas_ocupadas})
+
 
 @login_required
 def crear_reserva(request):
@@ -160,6 +213,7 @@ def crear_reserva(request):
         form = ReservaForm(initial=initial_data, user=request.user)
 
     return render(request, 'usuario/reserva_form.html', {'form': form, 'titulo': 'Agendar Cita'})
+
 @login_required
 def mis_reservas(request):
     """Lista las reservas del cliente con búsqueda y filtros."""

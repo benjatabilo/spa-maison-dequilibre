@@ -24,4 +24,12 @@ urlpatterns = [
     path('reservas/<int:pk>/editar/', views.editar_reserva, name='editar_reserva'),
     path('reservas/<int:pk>/cancelar/', views.cancelar_reserva, name='cancelar_reserva'),
     path('reservas/<int:pk>/eliminar/', views.eliminar_reserva, name='eliminar_reserva'),
+
+    # Endpoints AJAX para el formulario de reserva (selects dependientes y horario)
+    path('reservas/ajax/terapeutas-de-terapia/<int:terapia_id>/',
+         views.ajax_terapeutas_de_terapia, name='ajax_terapeutas_de_terapia'),
+    path('reservas/ajax/terapias-de-terapeuta/<int:terapeuta_id>/',
+         views.ajax_terapias_de_terapeuta, name='ajax_terapias_de_terapeuta'),
+    path('reservas/ajax/horas-ocupadas/',
+         views.ajax_horas_ocupadas, name='ajax_horas_ocupadas'),
 ]
