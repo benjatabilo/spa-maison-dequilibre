@@ -1,22 +1,15 @@
 {% extends 'administrador/base_admin.html' %}
 {% load static %}
 
-{% block titulo %}Panel Administrador - Turnos{% endblock %}
+{% block titulo %}Panel Administrador - Reservas por terapeuta{% endblock %}
 
 {% block panel_contenido %}
 
-<h2 class="mb-4">Turnos y salas</h2>
-
-{% if sin_datos %}
-<div class="alert alert-warning">
-  No se pudo cargar la información de turnos. Verifica que el archivo
-  <code>turnos.json</code> exista y tenga un formato válido.
-</div>
-{% endif %}
+<h2 class="mb-4">Reservas por terapeuta</h2>
 
 <p class="mb-4">
-  <span class="badge badge-libre">{{ total_turnos }} terapeutas con turno asignado</span>
-  <span class="badge badge-activo ms-2">{{ total_activos }} en turno activo</span>
+  <span class="badge badge-libre">{{ total_terapeutas }} terapeuta{{ total_terapeutas|pluralize }} registrado{{ total_terapeutas|pluralize }}</span>
+  <span class="badge badge-activo ms-2">{{ con_citas_hoy }} con citas hoy</span>
 </p>
 
 <div class="table-responsive">
@@ -24,28 +17,36 @@
     <thead>
       <tr>
         <th>Terapeuta</th>
-        <th>Sala</th>
-        <th>Turno</th>
+        <th>Profesión</th>
+        <th>Citas hoy</th>
+        <th>Próxima cita</th>
         <th>Estado</th>
       </tr>
     </thead>
     <tbody>
-      {% for turno in turnos %}
+      {% for fila in filas %}
       <tr>
-        <td>{{ turno.terapeuta }}</td>
-        <td>{{ turno.sala }}</td>
-        <td>{{ turno.turno }}</td>
+        <td>{{ fila.terapeuta.nombre }}</td>
+        <td>{{ fila.terapeuta.profesion }}</td>
+        <td>{{ fila.citas_hoy }}</td>
         <td>
-          {% if turno.estado == 'Activo' %}
-          <span class="badge badge-activo">{{ turno.estado }}</span>
+          {% if fila.proxima %}
+          {{ fila.proxima.fecha|date:"d-m-Y" }} · {{ fila.proxima.hora|time:"H:i" }}
           {% else %}
-          <span class="badge badge-libre">{{ turno.estado }}</span>
+          <span class="text-muted">Sin citas agendadas</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if fila.citas_hoy > 0 %}
+          <span class="badge badge-activo">Con citas hoy</span>
+          {% else %}
+          <span class="badge badge-libre">Libre hoy</span>
           {% endif %}
         </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="4" class="text-center text-muted">No hay turnos registrados.</td>
+        <td colspan="5" class="text-center text-muted">Aún no hay terapeutas registrados.</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -58,10 +59,10 @@
       <img src="{% static 'images/espacio_masaje.jpg' %}" class="w-100"
            style="height:160px;object-fit:cover;" alt="Sala de masajes">
       <div class="card-body">
-        <h5 class="mb-2">Distribución de salas</h5>
+        <h5 class="mb-2">Carga de trabajo del equipo</h5>
         <p class="text-muted small mb-0">
-          Cada terapeuta tiene asignada una sala y un horario de turno.
-          Los turnos "Libre" quedan disponibles para reasignar citas de último minuto.
+          Esta vista muestra cuántas citas tiene agendadas cada terapeuta hoy,
+          y cuál es su próxima cita confirmada o pendiente.
         </p>
         {% if info_imagen %}
         <p class="text-muted small mt-2 mb-0">

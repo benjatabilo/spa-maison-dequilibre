@@ -132,20 +132,34 @@ def panel(request):
 
 @login_required
 def turnos(request):
-    lista_turnos = _cargar_json('turnos.json', [])
+    """
+    Antes "Turnos y salas", con datos ficticios de un JSON (no existe
+    ningun concepto de 'sala' en la base de datos real). Ahora muestra,
+    por cada terapeuta, cuantas citas tiene hoy y cual es su proxima
+    cita, calculado en vivo desde Reserva.
+    """
+    hoy = timezone.localdate()
+    reservas_activas = Reserva.objects.exclude(estado='CANCELADA')
 
-    turnos_activos = [t for t in lista_turnos if t.get('estado') == 'Activo']
-    turnos_libres = [t for t in lista_turnos if t.get('estado') != 'Activo']
+    filas = []
+    for terapeuta in Terapeuta.objects.all().order_by('nombre'):
+        reservas_terapeuta = reservas_activas.filter(terapeuta=terapeuta)
+        proxima = reservas_terapeuta.filter(fecha__gte=hoy).order_by('fecha', 'hora').first()
+        filas.append({
+            'terapeuta': terapeuta,
+            'citas_hoy': reservas_terapeuta.filter(fecha=hoy).count(),
+            'proxima': proxima,
+        })
+
+    con_citas_hoy = sum(1 for fila in filas if fila['citas_hoy'] > 0)
     info_imagen = _info_imagen('espacio_masaje.jpg')
 
     contexto = {
-        'turnos': lista_turnos,
-        'total_turnos': len(lista_turnos),
-        'total_activos': len(turnos_activos),
-        'total_libres': len(turnos_libres),
+        'filas': filas,
+        'total_terapeutas': len(filas),
+        'con_citas_hoy': con_citas_hoy,
         'info_imagen': info_imagen,
         'seccion_activa': 'turnos',
-        'sin_datos': not lista_turnos,
     }
     return render(request, 'administrador/turnos.html', contexto)
 
