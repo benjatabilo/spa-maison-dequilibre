@@ -32,6 +32,30 @@
       </div>
     </div>
 
+    <div class="mb-4">
+      <label class="form-label">Terapias que realiza</label>
+      <p class="small text-muted mb-2">
+        Solo estas terapias le aparecerán disponibles a los clientes cuando reserven con este terapeuta.
+      </p>
+      <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
+        {% for checkbox in form.terapias %}
+        <div class="form-check">
+          {{ checkbox.tag }}
+          <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+            {{ checkbox.choice_label }}
+          </label>
+        </div>
+        {% empty %}
+        <p class="text-muted small mb-0">
+          Aún no hay terapias registradas. Crea alguna desde "Gestión de terapias" primero.
+        </p>
+        {% endfor %}
+      </div>
+      {% if form.terapias.errors %}
+      <div class="text-danger small mt-1">{{ form.terapias.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
     <div class="mb-3">
       <label for="{{ form.profesion.id_for_label }}" class="form-label">Profesión</label>
       {{ form.profesion }}
