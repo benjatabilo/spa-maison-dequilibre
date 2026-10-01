@@ -9,8 +9,9 @@ class TerapeutaAdmin(admin.ModelAdmin):
     search_fields = ('nombre', 'profesion', 'correo')
     ordering = ('nombre',)
     list_per_page = 20
+    filter_horizontal = ('terapias',)
 
     fieldsets = (
-        ('Datos del terapeuta', {'fields': ('nombre', 'profesion', 'correo')}),
+        ('Datos del terapeuta', {'fields': ('nombre', 'profesion', 'correo', 'terapias')}),
         ('Archivos', {'fields': ('foto', 'certificado')}),
     )
