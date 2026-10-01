@@ -94,7 +94,7 @@ class TerapeutaForm(forms.ModelForm):
     class Meta:
         model = Terapeuta
         # 'nombre' NO va aqui: se arma a partir de nombre_pila + apellido en save()
-        fields = ['profesion', 'correo', 'foto', 'certificado']
+        fields = ['profesion', 'correo', 'foto', 'certificado', 'terapias']
         widgets = {
             'profesion': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -106,6 +106,7 @@ class TerapeutaForm(forms.ModelForm):
             }),
             'foto': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'certificado': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'terapias': forms.CheckboxSelectMultiple(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -126,13 +127,16 @@ class TerapeutaForm(forms.ModelForm):
         nombre_pila = self.cleaned_data['nombre_pila'].strip()
         if not nombre_pila:
             raise forms.ValidationError('El nombre no puede estar vacío.')
-        return nombre_pila
+        return nombre_pila.title()
 
     def clean_apellido(self):
         apellido = self.cleaned_data['apellido'].strip()
         if not apellido:
             raise forms.ValidationError('El apellido no puede estar vacío.')
-        return apellido
+        return apellido.title()
+
+    def clean_correo(self):
+        return self.cleaned_data['correo'].strip().lower()
 
     def clean(self):
         cleaned = super().clean()
@@ -237,6 +241,12 @@ class ClienteForm(forms.ModelForm):
             'email': 'Correo electrónico',
             'is_active': 'Cuenta activa (puede iniciar sesión)',
         }
+
+    def clean_first_name(self):
+        return self.cleaned_data['first_name'].strip().title()
+
+    def clean_last_name(self):
+        return self.cleaned_data['last_name'].strip().title()
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
