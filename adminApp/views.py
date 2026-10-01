@@ -167,6 +167,7 @@ def turnos(request):
 def clientes(request):
 
     query = request.GET.get('q', '').strip()
+    estado_sel = request.GET.get('estado', '').strip()
 
     lista_clientes = (
         User.objects
@@ -182,6 +183,10 @@ def clientes(request):
             Q(last_name__icontains=query) |
             Q(email__icontains=query)
         )
+    if estado_sel == 'activa':
+        lista_clientes = lista_clientes.filter(is_active=True)
+    elif estado_sel == 'desactivada':
+        lista_clientes = lista_clientes.filter(is_active=False)
 
     total_activos = lista_clientes.filter(is_active=True).count()
 
@@ -190,6 +195,7 @@ def clientes(request):
         'total_clientes': lista_clientes.count(),
         'total_activos': total_activos,
         'query': query,
+        'estado_sel': estado_sel,
         'seccion_activa': 'clientes',
     }
     return render(request, 'administrador/clientes.html', contexto)
@@ -258,9 +264,11 @@ def mi_perfil(request):
 def lista_terapias(request):
     """
     Mostrar Todos + Buscar: lista las terapias guardadas en la base de
-    datos, con un buscador opcional por nombre o descripcion.
+    datos, con un buscador por nombre/descripcion y un filtro adicional
+    por rango de precio.
     """
     query = request.GET.get('q', '').strip()
+    rango_precio = request.GET.get('precio', '').strip()
 
     terapias = Terapia.objects.all().order_by('nombre')
     if query:
@@ -268,14 +276,21 @@ def lista_terapias(request):
             Q(nombre__icontains=query) | Q(descripcion__icontains=query)
         )
 
+    if rango_precio == 'bajo':
+        terapias = terapias.filter(precio__lt=20000)
+    elif rango_precio == 'medio':
+        terapias = terapias.filter(precio__gte=20000, precio__lte=40000)
+    elif rango_precio == 'alto':
+        terapias = terapias.filter(precio__gt=40000)
+
     contexto = {
         'terapias': terapias,
         'total_terapias': terapias.count(),
         'query': query,
+        'rango_precio': rango_precio,
         'seccion_activa': 'terapias',
     }
     return render(request, 'administrador/terapias_lista.html', contexto)
-
 
 @login_required
 def crear_terapia(request):
@@ -357,8 +372,17 @@ def eliminar_terapia(request, pk):
 
 @login_required
 def lista_terapeutas(request):
-    """Mostrar Todos + Buscar: lista los terapeutas registrados."""
+    """Mostrar Todos + Buscar: lista los terapeutas registrados, con un
+    buscador de texto y un filtro adicional por profesión."""
     query = request.GET.get('q', '').strip()
+    profesion_sel = request.GET.get('profesion', '').strip()
+
+    # Lista de profesiones distintas ya registradas, para armar el filtro
+    profesiones = (Terapeuta.objects
+                   .exclude(profesion='')
+                   .order_by('profesion')
+                   .values_list('profesion', flat=True)
+                   .distinct())
 
     terapeutas = Terapeuta.objects.all().order_by('nombre')
     if query:
@@ -367,15 +391,18 @@ def lista_terapeutas(request):
             Q(profesion__icontains=query) |
             Q(correo__icontains=query)
         )
+    if profesion_sel:
+        terapeutas = terapeutas.filter(profesion=profesion_sel)
 
     contexto = {
         'terapeutas': terapeutas,
         'total_terapeutas': terapeutas.count(),
         'query': query,
+        'profesiones': profesiones,
+        'profesion_sel': profesion_sel,
         'seccion_activa': 'terapeutas',
     }
     return render(request, 'administrador/terapeutas_lista.html', contexto)
-
 
 @login_required
 def crear_terapeuta(request):

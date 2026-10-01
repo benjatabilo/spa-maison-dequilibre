@@ -7,15 +7,22 @@
 
 <h2 class="mb-4">Gestión de clientes</h2>
 
-<form method="get" class="mb-4" style="max-width: 420px;">
-  <div class="input-group">
+<form method="get" class="mb-4 d-flex flex-wrap gap-2 align-items-start">
+  <div class="input-group" style="max-width: 360px;">
     <input type="text" name="q" class="form-control" value="{{ query }}"
            placeholder="Buscar por nombre, usuario o correo...">
     <button type="submit" class="btn btn-outline-secondary">Buscar</button>
-    {% if query %}
-    <a href="{% url 'clientes_admin' %}" class="btn btn-outline-secondary">Limpiar</a>
-    {% endif %}
   </div>
+
+  <select name="estado" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+    <option value="">Cualquier estado</option>
+    <option value="activa" {% if estado_sel == 'activa' %}selected{% endif %}>Solo activas</option>
+    <option value="desactivada" {% if estado_sel == 'desactivada' %}selected{% endif %}>Solo desactivadas</option>
+  </select>
+
+  {% if query or estado_sel %}
+  <a href="{% url 'clientes_admin' %}" class="btn btn-outline-secondary">Limpiar filtros</a>
+  {% endif %}
 </form>
 
 <p class="mb-3">

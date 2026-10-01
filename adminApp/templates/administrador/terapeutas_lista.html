@@ -12,15 +12,23 @@
   </a>
 </div>
 
-<form method="get" class="mb-4" style="max-width: 420px;">
-  <div class="input-group">
+<form method="get" class="mb-4 d-flex flex-wrap gap-2 align-items-start">
+  <div class="input-group" style="max-width: 360px;">
     <input type="text" name="q" class="form-control" value="{{ query }}"
            placeholder="Buscar por nombre, profesión o correo...">
     <button type="submit" class="btn btn-outline-secondary">Buscar</button>
-    {% if query %}
-    <a href="{% url 'lista_terapeutas' %}" class="btn btn-outline-secondary">Limpiar</a>
-    {% endif %}
   </div>
+
+  <select name="profesion" class="form-select" style="max-width: 220px;" onchange="this.form.submit()">
+    <option value="">Todas las profesiones</option>
+    {% for profesion in profesiones %}
+    <option value="{{ profesion }}" {% if profesion_sel == profesion %}selected{% endif %}>{{ profesion }}</option>
+    {% endfor %}
+  </select>
+
+  {% if query or profesion_sel %}
+  <a href="{% url 'lista_terapeutas' %}" class="btn btn-outline-secondary">Limpiar filtros</a>
+  {% endif %}
 </form>
 
 <p class="mb-3">

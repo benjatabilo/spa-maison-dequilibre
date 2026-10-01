@@ -46,6 +46,29 @@
       </label>
     </div>
 
+    <div class="border rounded p-3 mb-4 bg-light">
+      <p class="fw-semibold mb-1">Restablecer contraseña</p>
+      <p class="small text-muted mb-3">
+        Deja estos dos campos en blanco para mantener la contraseña actual del cliente.
+      </p>
+
+      <div class="mb-3">
+        <label for="{{ form.password1.id_for_label }}" class="form-label">Nueva contraseña</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}
+        <div class="text-danger small mt-1">{{ form.password1.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-0">
+        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmar nueva contraseña</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+        <div class="text-danger small mt-1">{{ form.password2.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-spa-secondary">Guardar</button>
       <a href="{% url 'clientes_admin' %}" class="btn btn-outline-secondary">Cancelar</a>

@@ -206,7 +206,22 @@ class TerapeutaForm(forms.ModelForm):
 
 
 class ClienteForm(forms.ModelForm):
-    """Edita los datos basicos de un cliente (User) desde el panel admin."""
+    """
+    Edita los datos basicos de un cliente (User) desde el panel admin.
+    Los campos de contrasena son opcionales: si se dejan en blanco, la
+    contrasena actual del cliente no se modifica. Si se completan, deben
+    coincidir y cumplir las reglas de seguridad de Django.
+    """
+    password1 = forms.CharField(
+        label='Nueva contraseña', required=False, strip=False,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
+        help_text='Déjalo en blanco para mantener la contraseña actual del cliente.',
+    )
+    password2 = forms.CharField(
+        label='Confirmar nueva contraseña', required=False, strip=False,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
+    )
+
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email', 'is_active']
@@ -228,3 +243,27 @@ class ClienteForm(forms.ModelForm):
         if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError('Ya existe otra cuenta con este correo.')
         return email
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get('password1', '')
+        p2 = cleaned.get('password2', '')
+
+        if p1 or p2:
+            if p1 != p2:
+                self.add_error('password2', 'Las contraseñas no coinciden.')
+            else:
+                try:
+                    validate_password(p1, user=self.instance)
+                except ValidationError as e:
+                    self.add_error('password1', e)
+        return cleaned
+
+    def save(self, commit=True):
+        usuario = super().save(commit=False)
+        password = self.cleaned_data.get('password1')
+        if password:
+            usuario.set_password(password)
+        if commit:
+            usuario.save()
+        return usuario
