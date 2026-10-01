@@ -1,8 +1,0 @@
-[
-  {"dia": "Lunes", "hora": "09:00", "terapia": "Masaje descontracturante", "cliente": "Andrea Muñoz", "sala": "Sala 1"},
-  {"dia": "Lunes", "hora": "12:00", "terapia": "Piedras calientes", "cliente": "Felipe Rojas", "sala": "Sala 1"},
-  {"dia": "Martes", "hora": "10:30", "terapia": "Aromaterapia", "cliente": "Constanza Díaz", "sala": "Sala 2"},
-  {"dia": "Miércoles", "hora": "09:00", "terapia": "Masaje facial", "cliente": "Ignacio Vera", "sala": "Sala 1"},
-  {"dia": "Jueves", "hora": "10:30", "terapia": "Masaje descontracturante", "cliente": "Valentina Soto", "sala": "Sala 3"},
-  {"dia": "Viernes", "hora": "12:00", "terapia": "Masaje facial", "cliente": "Rodrigo Pino", "sala": "Sala 2"}
-]

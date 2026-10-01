@@ -36,7 +36,6 @@ class RestriccionPorRolMiddleware:
         return self.get_response(request)
 
     def _denegar(self, request, user, rol):
-        # Import local para evitar importaciones circulares con views.py
         from usuarioApp.views import _redirect_by_role
 
         messages.error(request, "No tienes permiso para acceder a esa sección.")

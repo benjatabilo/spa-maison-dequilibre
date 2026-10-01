@@ -5,19 +5,13 @@ from .models import Reserva
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-# Horario de atencion del spa: sesiones de 1 hora, de 9:00 a 17:00
-# (la ultima sesion empieza a las 16:00 y termina a las 17:00).
 HORAS_DISPONIBLES = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']
 
 
 class ReservaForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user = user  # cliente autenticado, para validar sus propios choques de horario
-
-        # Al editar una reserva existente, el valor guardado en BD puede traer
-        # segundos (ej. 09:00:00); lo normalizamos a "09:00" para que coincida
-        # exactamente con las choices de abajo y quede preseleccionado.
+        self.user = user  
         if self.instance.pk and self.instance.hora:
             self.initial['hora'] = self.instance.hora.strftime('%H:%M')
 
@@ -56,13 +50,9 @@ class ReservaForm(forms.ModelForm):
         terapeuta = cleaned.get('terapeuta')
         terapia = cleaned.get('terapia')
 
-        # La hora debe ser una de las franjas de atencion (9:00 a 16:00).
-        # Esto respalda al JS por si el navegador no lo ejecuta o alguien
-        # manipula el formulario.
         if hora and hora.strftime('%H:%M') not in HORAS_DISPONIBLES:
             self.add_error('hora', 'Elige una hora dentro del horario de atención (9:00 a 17:00).')
 
-        # El terapeuta elegido debe realizar la terapia elegida.
         if terapeuta and terapia and not terapeuta.terapias.filter(pk=terapia.pk).exists():
             self.add_error(
                 'terapeuta',
@@ -72,26 +62,22 @@ class ReservaForm(forms.ModelForm):
         if not (fecha and hora):
             return cleaned
 
-        # 1. Si es hoy, la hora no puede haber pasado
         ahora = timezone.localtime()
         if (fecha == ahora.date() and hora <= ahora.time()
                 and (self._es_nueva_o_cambio('hora') or self._es_nueva_o_cambio('fecha'))):
             self.add_error('hora', 'Esa hora ya pasó. Elige una hora posterior a la actual.')
             return cleaned
 
-        # Reservas que ocupan horario (las canceladas lo liberan)
         ocupadas = Reserva.objects.filter(fecha=fecha, hora=hora).exclude(estado='CANCELADA')
         if self.instance.pk:
             ocupadas = ocupadas.exclude(pk=self.instance.pk)
 
-        # 2. El terapeuta no puede tener dos citas a la misma hora
         if terapeuta and ocupadas.filter(terapeuta=terapeuta).exists():
             self.add_error(
                 'hora',
                 f'{terapeuta.nombre} ya tiene una cita en ese horario. Elige otra hora u otro terapeuta.'
             )
 
-        # 3. El cliente no puede tener dos citas a la misma hora
         elif self.user and ocupadas.filter(usuario=self.user).exists():
             self.add_error('hora', 'Ya tienes otra cita agendada en ese mismo horario.')
 
@@ -135,7 +121,6 @@ class RegistroForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Aplica estilo Bootstrap a todos los campos
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
         self.fields['password1'].label = 'Contraseña'

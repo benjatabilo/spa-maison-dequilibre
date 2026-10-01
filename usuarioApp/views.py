@@ -12,7 +12,6 @@ from django.db.models import Q
 from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
 from django.http import JsonResponse
-# Importamos los modelos de las otras apps y de la propia usuarioApp
 from adminApp.models import Terapia
 from terapeutaApp.models import Terapeuta
 from .models import Reserva
@@ -39,6 +38,11 @@ def _cargar_json(nombre_archivo):
 
 
 # --- VISTAS PÚBLICAS Y DE CONSULTA ---
+def _cargar_json(nombre_archivo):
+    """Carga un archivo JSON desde la carpeta static/data/ del proyecto."""
+    ruta_archivo = os.path.join(settings.BASE_DIR, 'static', 'data', nombre_archivo)
+    with open(ruta_archivo, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
 def inicio(request):
     """Página de inicio del Spa."""
@@ -94,7 +98,6 @@ def login_view(request):
             login(request, usuario)
             messages.success(request, f"¡Bienvenido/a de nuevo, {usuario.username}!")
 
-            # Si venía de una página protegida, vuelve ahí (solo si la URL es segura)
             if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
                 return redirect(next_url)
             return _redirect_by_role(usuario)
@@ -136,8 +139,6 @@ def logout_view(request):
 def mi_panel(request):
     """Lleva al usuario a su panel según su rol (admin, terapeuta o cliente)."""
     return _redirect_by_role(request.user)
-
-# --- CRUD DE RESERVAS DEL CLIENTE ---
 
 # --- CRUD DE RESERVAS DEL CLIENTE ---
 
