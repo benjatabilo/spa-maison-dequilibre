@@ -119,7 +119,16 @@
       </div>
     </div>
 
-    <div class="col-md-9 col-lg-10 py-4">
+        <div class="col-md-9 col-lg-10 py-4">
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        {% endfor %}
+      {% endif %}
+
       {% if sin_ficha %}
       <div class="alert alert-warning">
         Tu usuario aún no está vinculado a una ficha de terapeuta. Pide al administrador que
