@@ -15,11 +15,44 @@
     <div class="alert alert-danger">{{ form.non_field_errors }}</div>
     {% endif %}
 
-    <div class="mb-3">
-      <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre</label>
-      {{ form.nombre }}
-      {% if form.nombre.errors %}
-      <div class="text-danger small mt-1">{{ form.nombre.errors|striptags }}</div>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.nombre_pila.id_for_label }}" class="form-label">Nombre</label>
+        {{ form.nombre_pila }}
+        {% if form.nombre_pila.errors %}
+        <div class="text-danger small mt-1">{{ form.nombre_pila.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="{{ form.apellido.id_for_label }}" class="form-label">Apellido</label>
+        {{ form.apellido }}
+        {% if form.apellido.errors %}
+        <div class="text-danger small mt-1">{{ form.apellido.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Terapias que realiza</label>
+      <p class="small text-muted mb-2">
+        Solo estas terapias le aparecerán disponibles a los clientes cuando reserven con este terapeuta.
+      </p>
+      <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
+        {% for checkbox in form.terapias %}
+        <div class="form-check">
+          {{ checkbox.tag }}
+          <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+            {{ checkbox.choice_label }}
+          </label>
+        </div>
+        {% empty %}
+        <p class="text-muted small mb-0">
+          Aún no hay terapias registradas. Crea alguna desde "Gestión de terapias" primero.
+        </p>
+        {% endfor %}
+      </div>
+      {% if form.terapias.errors %}
+      <div class="text-danger small mt-1">{{ form.terapias.errors|striptags }}</div>
       {% endif %}
     </div>
 

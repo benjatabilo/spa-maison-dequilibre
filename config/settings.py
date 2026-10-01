@@ -1,3 +1,4 @@
+
 """
 Django settings for config project.
 
@@ -14,6 +15,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from django.contrib.messages import constants as message_constants
+from django.core.exceptions import ImproperlyConfigured
 
 # Cargar variables del archivo .env
 load_dotenv()
@@ -26,12 +28,16 @@ TEMPLATES_DIR = os.path.join(BASE_DIR,'templates')
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l8w0c+zx5d@b(-a3(kp9^($(jesej$bphj@i0k4y$g6^i)51w4'
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('Falta SECRET_KEY en el archivo .env')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Solo es True si en el .env dice exactamente DEBUG=True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+# Hosts separados por coma en el .env, ej: ALLOWED_HOSTS=localhost,127.0.0.1
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()]
 
 
 # Application definition
@@ -107,6 +113,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 7,
+        },
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -114,8 +123,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'adminApp.validators.ComplejidadPasswordValidator',
+    },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/

@@ -92,19 +92,19 @@
       <div class="col-md-3 col-lg-2 p-0 sidebar-admin">
         <a href="{% url 'panel_admin' %}"
            class="{% if seccion_activa == 'panel' %}activo{% endif %}">
-          Resumen general
+          Resumen General
         </a>
         <a href="{% url 'lista_terapias' %}"
            class="{% if seccion_activa == 'terapias' %}activo{% endif %}">
-          Gestión de terapias
+          Gestión de Terapias
         </a>
         <a href="{% url 'lista_terapeutas' %}"
            class="{% if seccion_activa == 'terapeutas' %}activo{% endif %}">
-          Gestión de terapeutas
+          Gestión de Terapeutas
         </a>
         <a href="{% url 'turnos_admin' %}"
            class="{% if seccion_activa == 'turnos' %}activo{% endif %}">
-          Turnos y salas
+          Reservas por terapeuta
         </a>
         <a href="{% url 'clientes_admin' %}"
            class="{% if seccion_activa == 'clientes' %}activo{% endif %}">
