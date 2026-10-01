@@ -66,9 +66,22 @@ def usuario_de_terapeuta(correo):
 class TerapeutaForm(forms.ModelForm):
     """
     Ficha del terapeuta + cuenta de acceso.
+    El nombre y apellido se piden por separado en el formulario (mas natural
+    para quien lo llena), pero se combinan en el unico campo Terapeuta.nombre
+    que ya usa el resto del proyecto (catalogo publico, reservas, etc.), para
+    no tener que tocar ningun otro archivo ni modificar el modelo.
+
     Al guardar se crea (o actualiza) el usuario con el que el terapeuta inicia
     sesion: usuario = correo, contrasena = la ingresada aqui, grupo = Terapeuta.
     """
+    nombre_pila = forms.CharField(
+        label='Nombre', max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Camila'}),
+    )
+    apellido = forms.CharField(
+        label='Apellido', max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Torres'}),
+    )
     password1 = forms.CharField(
         label='Contraseña', required=False, strip=False,
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
@@ -80,12 +93,9 @@ class TerapeutaForm(forms.ModelForm):
 
     class Meta:
         model = Terapeuta
-        fields = ['nombre', 'profesion', 'correo', 'foto', 'certificado']
+        # 'nombre' NO va aqui: se arma a partir de nombre_pila + apellido en save()
+        fields = ['profesion', 'correo', 'foto', 'certificado']
         widgets = {
-            'nombre': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ej: Camila Torres',
-            }),
             'profesion': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ej: Kinesióloga',
@@ -104,16 +114,30 @@ class TerapeutaForm(forms.ModelForm):
         self.correo_anterior = self.instance.correo if self.instance.pk else None
         self.usuario_existente = usuario_de_terapeuta(self.correo_anterior)
 
-    def clean_nombre(self):
-        nombre = self.cleaned_data['nombre'].strip()
-        if not nombre:
-            raise forms.ValidationError('El nombre del terapeuta no puede estar vacío.')
-        return nombre
+        # Al editar un terapeuta ya existente, separamos su nombre completo
+        # guardado (ej: "Camila Torres") en los dos campos del formulario,
+        # para que aparezcan precargados.
+        if self.instance.pk and self.instance.nombre and not self.initial.get('nombre_pila'):
+            partes = self.instance.nombre.strip().split(' ', 1)
+            self.initial['nombre_pila'] = partes[0]
+            self.initial['apellido'] = partes[1] if len(partes) > 1 else ''
+
+    def clean_nombre_pila(self):
+        nombre_pila = self.cleaned_data['nombre_pila'].strip()
+        if not nombre_pila:
+            raise forms.ValidationError('El nombre no puede estar vacío.')
+        return nombre_pila
+
+    def clean_apellido(self):
+        apellido = self.cleaned_data['apellido'].strip()
+        if not apellido:
+            raise forms.ValidationError('El apellido no puede estar vacío.')
+        return apellido
 
     def clean(self):
         cleaned = super().clean()
         correo = (cleaned.get('correo') or '').strip()
-        nombre = cleaned.get('nombre', '')
+        nombre_pila = cleaned.get('nombre_pila', '')
         p1 = cleaned.get('password1', '')
         p2 = cleaned.get('password2', '')
         es_nuevo = not self.instance.pk
@@ -126,7 +150,7 @@ class TerapeutaForm(forms.ModelForm):
                 self.add_error('password2', 'Las contraseñas no coinciden.')
             elif correo:
                 try:
-                    validate_password(p1, user=User(username=correo, first_name=nombre))
+                    validate_password(p1, user=User(username=correo, first_name=nombre_pila))
                 except ValidationError as e:
                     self.add_error('password1', e)
 
@@ -143,6 +167,12 @@ class TerapeutaForm(forms.ModelForm):
         return cleaned
 
     def save(self, commit=True):
+        # Arma el nombre completo que guarda el modelo a partir de los dos
+        # campos del formulario, antes de que ModelForm cree/actualice la instancia.
+        nombre_pila = self.cleaned_data.get('nombre_pila', '').strip()
+        apellido = self.cleaned_data.get('apellido', '').strip()
+        self.instance.nombre = f'{nombre_pila} {apellido}'.strip()
+
         if not commit:
             return super().save(commit=False)
 
@@ -163,8 +193,8 @@ class TerapeutaForm(forms.ModelForm):
 
         usuario.username = terapeuta.correo
         usuario.email = terapeuta.correo
-        usuario.first_name = terapeuta.nombre
-        usuario.last_name = ''
+        usuario.first_name = self.cleaned_data.get('nombre_pila', '').strip()
+        usuario.last_name = self.cleaned_data.get('apellido', '').strip()
         if password:
             usuario.set_password(password)
         elif not usuario.pk:

@@ -1,16 +1,19 @@
 import os
 import json
+from datetime import timedelta
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.db.models.deletion import RestrictedError
+from django.utils import timezone
 from PIL import Image
 from django.contrib.auth.decorators import login_required
 from .models import Terapia
 from .forms import TerapiaForm, TerapeutaForm, ClienteForm, usuario_de_terapeuta
 from terapeutaApp.models import Terapeuta
+from usuarioApp.models import Reserva
 from django.contrib.auth.models import User, Group
 
 def _cargar_json(nombre_archivo, valor_por_defecto=None):
@@ -58,46 +61,72 @@ def _info_imagen(nombre_archivo):
 DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 
-def _construir_grafico_citas(citas):
-    conteo = {dia: 0 for dia in DIAS_SEMANA}
-    for cita in citas:
-        dia = cita.get('dia')
-        if dia in conteo:
-            conteo[dia] += 1
+def _construir_grafico_citas_semana(reservas_activas, lunes):
+    """
+    Cuenta cuantas reservas (no canceladas) hay por cada dia de la semana
+    actual (Lunes a Domingo) y calcula el porcentaje de altura de cada
+    barra, igual que en la version anterior basada en JSON, pero ahora
+    con datos reales desde Reserva.
+    """
+    fechas_semana = [lunes + timedelta(days=i) for i in range(7)]
+    conteo = {fecha: 0 for fecha in fechas_semana}
+
+    de_la_semana = reservas_activas.filter(fecha__range=(fechas_semana[0], fechas_semana[-1]))
+    for reserva in de_la_semana:
+        if reserva.fecha in conteo:
+            conteo[reserva.fecha] += 1
 
     maximo = max(conteo.values()) if conteo.values() else 0
     maximo = maximo if maximo > 0 else 1
 
     grafico = []
-    for dia in DIAS_SEMANA:
-        cantidad = conteo[dia]
+    for fecha in fechas_semana:
+        cantidad = conteo[fecha]
         grafico.append({
-            'dia': dia,
+            'dia': DIAS_SEMANA[fecha.weekday()],
             'cantidad': cantidad,
             'porcentaje': round((cantidad / maximo) * 100),
         })
     return grafico
 
+
 @login_required
 def panel(request):
-    resumen = _cargar_json('resumen.json', {})
-    citas = _cargar_json('citas.json', [])
+    """
+    Resumen general: indicadores, grafico de citas de la semana y tabla de
+    proximas citas, todo calculado en vivo desde la base de datos (Terapia,
+    Terapeuta, Reserva), reemplazando los JSON de la Sumativa 1.
+    """
+    hoy = timezone.localdate()
+    lunes = hoy - timedelta(days=hoy.weekday())
 
-    citas_ordenadas = sorted(
-        citas,
-        key=lambda cita: DIAS_SEMANA.index(cita.get('dia')) if cita.get('dia') in DIAS_SEMANA else 99
+    # Igual criterio que usa terapeutaApp: una reserva CANCELADA no cuenta
+    # como cita real para efectos de indicadores ni ingresos.
+    reservas_activas = Reserva.objects.exclude(estado='CANCELADA')
+
+    citas_hoy_qs = reservas_activas.filter(fecha=hoy)
+    ingresos_dia = citas_hoy_qs.aggregate(total=Sum('terapia__precio'))['total'] or 0
+
+    grafico_citas = _construir_grafico_citas_semana(reservas_activas, lunes)
+
+    citas = (
+        reservas_activas
+        .filter(fecha__gte=hoy)
+        .select_related('usuario', 'terapia', 'terapeuta')
+        .order_by('fecha', 'hora')[:15]
     )
-    grafico_citas = _construir_grafico_citas(citas)
+
     info_imagen = _info_imagen('espacio_recepcion.jpg')
 
     contexto = {
-        'resumen': resumen,
-        'citas': citas_ordenadas,
-        'total_citas': len(citas),
+        'total_terapeutas': Terapeuta.objects.count(),
+        'total_terapias': Terapia.objects.count(),
+        'citas_hoy': citas_hoy_qs.count(),
+        'ingresos_dia': ingresos_dia,
+        'citas': citas,
         'grafico_citas': grafico_citas,
         'info_imagen': info_imagen,
         'seccion_activa': 'panel',
-        'sin_datos': not resumen and not citas,
     }
     return render(request, 'administrador/panel.html', contexto)
 
