@@ -8,6 +8,7 @@ from . import views
 # El router genera solo las rutas del CRUD a partir del ViewSet
 router = DefaultRouter()
 router.register(r'terapias', views.TerapiaViewSet, basename='terapia')
+router.register(r'terapeutas', views.TerapeutaViewSet, basename='terapeuta')
 
 urlpatterns = [
     path('', include(router.urls)),
