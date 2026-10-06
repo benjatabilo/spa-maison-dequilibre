@@ -11,6 +11,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -52,6 +53,11 @@ INSTALLED_APPS = [
     'usuarioApp',
     'adminApp',
     'terapeutaApp',
+    # --- API REST (Evaluación 3) ---
+    'rest_framework',                              # Django REST Framework
+    'rest_framework_simplejwt.token_blacklist',    # permite invalidar refresh tokens
+    'drf_spectacular',                             # Swagger / OpenAPI
+    'apiApp',
 ]
 
 MIDDLEWARE = [
@@ -98,7 +104,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '3306'),
         'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES', default_storage_engine=INNODB",
         },
     }
 }
@@ -145,6 +151,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -162,3 +169,70 @@ MESSAGE_TAGS = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# =====================================================================
+# API REST: Django REST Framework + JWT + Swagger (Evaluación Sumativa 3)
+# =====================================================================
+REST_FRAMEWORK = {
+    # Autenticación: JWT enviado en la cabecera  Authorization: Bearer <token>
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # "Seguro por defecto": todo endpoint exige estar autenticado, salvo que
+    # la vista diga explícitamente lo contrario.
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Solo JSON. La interfaz HTML de DRF (browsable API) queda únicamente en desarrollo.
+    'DEFAULT_RENDERER_CLASSES': (
+        ['rest_framework.renderers.JSONRenderer']
+        + (['rest_framework.renderers.BrowsableAPIRenderer'] if DEBUG else [])
+    ),
+    # Errores siempre en JSON y sin filtrar detalles internos (500 genérico, 409 en borrados con reservas).
+    'EXCEPTION_HANDLER': 'apiApp.exceptions.manejador_excepciones',
+    # Las listas se entregan paginadas: evita respuestas gigantes.
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    # Límites de uso: global (anónimos y autenticados) y específico para login/renovación de token.
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/min',
+        'user': '300/min',
+        'token': '10/min',
+    },
+}
+
+SIMPLE_JWT = {
+    # El access token dura poco: si lo roban, deja de servir pronto.
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_ACCESS_MINUTES', '15'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_REFRESH_DAYS', '1'))),
+    # Cada renovación entrega un refresh nuevo y manda el anterior a la lista negra.
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,          # registra el último acceso del usuario (campo last_login)
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,          # la clave sale del .env, no está escrita en el código
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': "API Spa Maison D'Equilibre",
+    'DESCRIPTION': (
+        "API RESTful del sistema de reservas del spa: terapias, terapeutas y reservas.\n\n"
+        "**Cómo autenticarse:** 1) llama a `POST /api/token/` con usuario y contraseña; "
+        "2) copia el valor de `access`; 3) pulsa **Authorize** y pégalo; "
+        "4) ya puedes probar los endpoints protegidos."
+    ),
+    'VERSION': '1.0.0',
+    'CONTACT': {'name': "Equipo Maison D'Equilibre"},
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,    # necesario para documentar subida de imágenes y archivos
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,   # no pierde el token al recargar la página
+    },
+}

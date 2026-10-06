@@ -25,6 +25,7 @@ urlpatterns = [
     path('administrador/', include('adminApp.urls')),
     path('terapeuta/', include('terapeutaApp.urls')),
     path('usuario/', include('usuarioApp.urls')),
+    path('api/', include('apiApp.urls')),          # API REST + JWT + Swagger
     path('', inicio, name='main'),
 ]
 

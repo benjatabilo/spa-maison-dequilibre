@@ -368,4 +368,8 @@ Y abrir el puerto 8000 en el grupo de seguridad de la instancia.
 | Nataly | Terapeuta (`terapeutaApp`) |
 | Visnupriya | Usuario / Cliente (`usuarioApp`) |
 
+<<<<<<< HEAD
 Programación Back End (TI3V41), INACAP sede La Serena, 2026.
+=======
+Programación Back End (TI3V41), INACAP sede La Serena, 2026.
+>>>>>>> origin/main
