@@ -52,6 +52,9 @@ INSTALLED_APPS = [
     'usuarioApp',
     'adminApp',
     'terapeutaApp',
+    # --- API REST EV3 ---
+    'rest_framework',
+    'spaApi',
 ]
 
 MIDDLEWARE = [
@@ -162,3 +165,17 @@ MESSAGE_TAGS = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# =====================================================================
+# API REST EV3 ESTO ES PARA QUE FUNCIONE EL JWT.
+# =====================================================================
+REST_FRAMEWORK = {
+    # Cómo se identifica quien llama a la API: con un token JWT en la cabecera Authorization
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # Por defecto, TODO endpoint exige estar autenticado
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
