@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'terapeutaApp',
     # --- API REST EV3 ---
     'rest_framework',
+    'drf_spectacular',
     'spaApi',
 ]
 
@@ -178,4 +179,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+
+    # Genera la documentación (Swagger) a partir del código
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+  # Documentación de la API (Swagger / OpenAPI)
+SPECTACULAR_SETTINGS = {
+      'TITLE': "API Spa Maison D'Equilibre",
+      'DESCRIPTION': 'API REST del spa: terapias, terapeutas y reservas.',
+      'VERSION': '1.0.0',
+      'SERVE_INCLUDE_SCHEMA': False,
+      'SWAGGER_UI_SETTINGS': {'persistAuthorization': True},   # no pierde el token al recargar
+  }
