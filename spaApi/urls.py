@@ -9,6 +9,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'terapias', views.TerapiaViewSet, basename='terapia')
 router.register(r'terapeutas', views.TerapeutaViewSet, basename='terapeuta')
+router.register(r'reservas', views.ReservaViewSet, basename='reserva')
 
 urlpatterns = [
     path('', include(router.urls)),

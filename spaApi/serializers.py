@@ -3,12 +3,17 @@
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
 from django.db import transaction
 from rest_framework import serializers
 
 from adminApp.forms import GRUPO_TERAPEUTA, usuario_de_terapeuta
 from adminApp.models import Terapia
 from terapeutaApp.models import Terapeuta
+
+from usuarioApp.forms import HORAS_DISPONIBLES
+from usuarioApp.models import Reserva
+from usuarioApp.roles import CLIENTE, obtener_rol
 
 
 class TerapiaSerializer(serializers.ModelSerializer):
@@ -131,3 +136,94 @@ class TerapeutaAdminSerializer(serializers.ModelSerializer):
         terapeuta = super().update(instancia, datos)
         self._guardar_cuenta(terapeuta, correo_anterior, password)
         return terapeuta
+
+# =====================================================================
+# Reservas (la transacción del negocio)
+# =====================================================================
+class ReservaSerializer(serializers.ModelSerializer):
+    """
+    Reserva vista por un Cliente (o un Terapeuta): el dueño es siempre quien llama,
+    y el estado lo maneja el sistema (solo lectura).
+    """
+    terapia_nombre = serializers.CharField(source='terapia.nombre', read_only=True)
+    terapeuta_nombre = serializers.CharField(source='terapeuta.nombre', read_only=True)
+
+    class Meta:
+        model = Reserva
+        fields = ['id', 'terapia', 'terapia_nombre', 'terapeuta', 'terapeuta_nombre',
+                  'fecha', 'hora', 'estado', 'observaciones', 'creado']
+        read_only_fields = ['id', 'estado', 'creado']
+
+    def validate_fecha(self, fecha):
+        cambia = self.instance is None or fecha != self.instance.fecha
+        if cambia and fecha < timezone.localdate():
+            raise serializers.ValidationError('No puedes agendar una cita en una fecha que ya pasó.')
+        return fecha
+
+    def _dueno(self, datos):
+        """A nombre de quién queda la reserva (el Administrador puede elegirlo; el Cliente no)."""
+        if datos.get('usuario'):
+            return datos['usuario']
+        if self.instance:
+            return self.instance.usuario
+        return self.context['request'].user
+
+    def validate(self, datos):
+        # Se revisa lo que llega y lo que cambia: modificar solo las observaciones no vuelve
+        # a exigir un horario libre, pero cambiar la hora sí.
+        reserva = self.instance
+
+        def valor(campo):
+            if campo in datos:
+                return datos[campo]
+            return getattr(reserva, campo) if reserva else None
+
+        def cambia(*campos):
+            return reserva is None or any(c in datos and datos[c] != getattr(reserva, c) for c in campos)
+
+        fecha, hora = valor('fecha'), valor('hora')
+        terapia, terapeuta = valor('terapia'), valor('terapeuta')
+
+        # 1) Horario de atención: sesiones de 1 hora, de 09:00 a 16:00 (terminan a las 17:00)
+        if 'hora' in datos and hora.strftime('%H:%M') not in HORAS_DISPONIBLES:
+            raise serializers.ValidationError(
+                {'hora': 'Elige una hora dentro del horario de atención (9:00 a 17:00, en horas exactas).'})
+
+        # 2) El terapeuta debe realizar esa terapia
+        if cambia('terapia', 'terapeuta') and not terapeuta.terapias.filter(pk=terapia.pk).exists():
+            raise serializers.ValidationError(
+                {'terapeuta': f'{terapeuta.nombre} no realiza "{terapia.nombre}". Elige otro terapeuta u otra terapia.'})
+
+        # 3) Si es hoy, la hora no puede haber pasado
+        ahora = timezone.localtime()
+        if cambia('fecha', 'hora') and fecha == ahora.date() and hora <= ahora.time():
+            raise serializers.ValidationError({'hora': 'Esa hora ya pasó. Elige una hora posterior a la actual.'})
+
+        # 4) Sin choques de horario (una reserva cancelada libera el horario)
+        if cambia('fecha', 'hora', 'terapeuta'):
+            ocupadas = Reserva.objects.filter(fecha=fecha, hora=hora).exclude(estado='CANCELADA')
+            if reserva:
+                ocupadas = ocupadas.exclude(pk=reserva.pk)
+            if ocupadas.filter(terapeuta=terapeuta).exists():
+                raise serializers.ValidationError(
+                    {'hora': f'{terapeuta.nombre} ya tiene una cita en ese horario. Elige otra hora u otro terapeuta.'})
+            if ocupadas.filter(usuario=self._dueno(datos)).exists():
+                raise serializers.ValidationError({'hora': 'El cliente ya tiene otra cita en ese mismo horario.'})
+        return datos
+
+
+class ReservaAdminSerializer(ReservaSerializer): 
+    """Lo que ve y escribe el Administrador: elige el cliente y puede cambiar el estado."""
+    usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+
+    class Meta(ReservaSerializer.Meta):
+        fields = ['id', 'usuario', 'usuario_username'] + [f for f in ReservaSerializer.Meta.fields if f != 'id']
+        read_only_fields = ['id', 'creado']          # aquí `estado` SÍ se puede escribir
+
+    def validate_usuario(self, usuario):
+        # Misma regla que la web: Administrador y Terapeuta no agendan citas, solo los Clientes.
+        if obtener_rol(usuario) != CLIENTE:
+            raise serializers.ValidationError('Solo se pueden registrar reservas a nombre de usuarios con perfil Cliente.')
+        if not usuario.is_active:
+            raise serializers.ValidationError('La cuenta de ese cliente está desactivada.')
+        return usuario
