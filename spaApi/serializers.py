@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from adminApp.forms import GRUPO_TERAPEUTA, usuario_de_terapeuta
 from adminApp.models import Terapia
@@ -227,3 +228,11 @@ class ReservaAdminSerializer(ReservaSerializer):
         if not usuario.is_active:
             raise serializers.ValidationError('La cuenta de ese cliente está desactivada.')
         return usuario
+
+class TokenConRolSerializer(TokenObtainPairSerializer):
+    """Login: entrega access y refresh, y además el rol, para que quien consume la API sepa qué puede hacer."""
+
+    def validate(self, attrs):
+        datos = super().validate(attrs)
+        datos['rol'] = obtener_rol(self.user)
+        return datos

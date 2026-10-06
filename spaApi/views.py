@@ -8,6 +8,8 @@ from rest_framework.decorators import action, api_view, authentication_classes, 
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from adminApp.forms import usuario_de_terapeuta
 from adminApp.models import Terapia
@@ -19,12 +21,23 @@ from .exceptions import ConflictoDeEstado
 from .permissions import PermisoReservas, SoloAdminEscribe
 from .serializers import (
     ReservaAdminSerializer, ReservaSerializer, TerapeutaAdminSerializer,
-    TerapeutaPublicoSerializer, TerapiaSerializer,
+    TerapeutaPublicoSerializer, TerapiaSerializer, TokenConRolSerializer,
 )
 
 ESTADOS_VALIDOS = [codigo for codigo, _ in Reserva.ESTADOS]
 
+class TokenObtenerView(TokenObtainPairView):
+    """Login: usuario y clave -> access y refresh (+ rol). Con límite de intentos por minuto."""
+    serializer_class = TokenConRolSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'token'
 
+
+class TokenRenovarView(TokenRefreshView):
+    """Renueva el access con un refresh válido. El refresh usado queda invalidado y se entrega uno nuevo."""
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'token'
+    
 @extend_schema(
     summary='¿Quién soy? (endpoint protegido de prueba)',
     responses=inline_serializer('Yo', {'usuario': serializers.CharField()}),

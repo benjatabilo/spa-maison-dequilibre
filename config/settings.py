@@ -16,6 +16,7 @@ import os
 from dotenv import load_dotenv
 from django.contrib.messages import constants as message_constants
 from django.core.exceptions import ImproperlyConfigured
+from datetime import timedelta
 
 # Cargar variables del archivo .env
 load_dotenv()
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
     'terapeutaApp',
     # --- API REST EV3 ---
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',   # permite invalidar refresh tokens
     'drf_spectacular',
     'spaApi',
 ]
@@ -102,7 +104,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '3306'),
         'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        'init_command': "SET sql_mode='STRICT_TRANS_TABLES', default_storage_engine=INNODB",
         },
     }
 }
@@ -187,6 +189,16 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ] + (['rest_framework.renderers.BrowsableAPIRenderer'] if DEBUG else []),
+    # Límite de peticiones por minuto (contra abuso y fuerza bruta)
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',    # sin token: se cuenta por dirección IP
+        'rest_framework.throttling.UserRateThrottle',    # con token: se cuenta por usuario
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/min',
+        'user': '300/min',
+        'token': '10/min',      # login y renovación de token: el más estricto
+    },
 }
 
   # Documentación de la API (Swagger / OpenAPI)
@@ -197,3 +209,25 @@ SPECTACULAR_SETTINGS = {
       'SERVE_INCLUDE_SCHEMA': False,
       'SWAGGER_UI_SETTINGS': {'persistAuthorization': True},   # no pierde el token al recargar
   }
+
+# Los contadores del límite de peticiones se guardan en la caché. Con gunicorn hay VARIOS procesos y
+# la caché por defecto (memoria) es distinta en cada uno: el límite se multiplicaría. Una caché en
+# archivo la comparten todos.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'django_cache',
+    }
+}
+
+# Configuración de los tokens JWT. Se firman con SECRET_KEY (la del .env), por eso nunca se sube a GitHub.
+SIMPLE_JWT = {
+    # Access token: corta vida. Si lo roban, deja de servir pronto. Para la demostración se puede
+    # subir poniendo JWT_ACCESS_MINUTES=60 en el .env.
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_ACCESS_MINUTES', '15'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,          # cada vez que se renueva, se entrega un refresh NUEVO...
+    'BLACKLIST_AFTER_ROTATION': True,       # ...y el anterior queda invalidado (un refresh sirve una sola vez)
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}

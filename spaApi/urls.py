@@ -1,7 +1,6 @@
 from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from . import views
 
@@ -13,8 +12,8 @@ router.register(r'reservas', views.ReservaViewSet, basename='reserva')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('token/', TokenObtainPairView.as_view(), name='token'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('token/', views.TokenObtenerView.as_view(), name='token'),
+    path('token/refresh/', views.TokenRenovarView.as_view(), name='token_refresh'),
     path('yo/', views.yo, name='yo'),
 
     # Documentación: /api/swagger/ es la página para probar la API con clics
