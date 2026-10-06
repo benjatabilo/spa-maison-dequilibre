@@ -179,9 +179,14 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-
     # Genera la documentación (Swagger) a partir del código
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Todos los errores pasan por un único manejador: siempre JSON y sin datos internos
+    'EXCEPTION_HANDLER': 'spaApi.exceptions.manejador_excepciones',
+    # Respuestas solo en JSON. La página de pruebas de DRF (HTML) solo se permite con DEBUG=True.
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ] + (['rest_framework.renderers.BrowsableAPIRenderer'] if DEBUG else []),
 }
 
   # Documentación de la API (Swagger / OpenAPI)

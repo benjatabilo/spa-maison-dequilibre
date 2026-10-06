@@ -4,8 +4,9 @@ from django.utils.dateparse import parse_date
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view, inline_serializer
 from rest_framework import filters, serializers, status, viewsets
-from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import ValidationError
+from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from adminApp.forms import usuario_de_terapeuta
@@ -33,6 +34,13 @@ def yo(request):
     """Endpoint protegido de prueba: dice quién es el usuario del token."""
     return Response({'usuario': request.user.username})
 
+@extend_schema(exclude=True)          # no aparece en Swagger
+@api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def no_encontrado(request, ruta=''):
+    """Cualquier URL inexistente bajo /api/ responde 404 en JSON (y no con la página HTML de Django)."""
+    raise NotFound('El recurso solicitado no existe en esta API.')
 
 class TerapiaViewSet(viewsets.ModelViewSet):
     """
