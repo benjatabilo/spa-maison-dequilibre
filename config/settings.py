@@ -203,12 +203,13 @@ REST_FRAMEWORK = {
 
   # Documentación de la API (Swagger / OpenAPI)
 SPECTACULAR_SETTINGS = {
-      'TITLE': "API Spa Maison D'Equilibre",
-      'DESCRIPTION': 'API REST del spa: terapias, terapeutas y reservas.',
-      'VERSION': '1.0.0',
-      'SERVE_INCLUDE_SCHEMA': False,
-      'SWAGGER_UI_SETTINGS': {'persistAuthorization': True},   # no pierde el token al recargar
-  }
+    'TITLE': "API Spa Maison D'Equilibre",
+    'DESCRIPTION': 'API REST del spa: terapias, terapeutas y reservas.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,   # <- NUEVA: separa el esquema de entrada y así los archivos salen como selector
+    'SWAGGER_UI_SETTINGS': {'persistAuthorization': True},
+}
 
 # Los contadores del límite de peticiones se guardan en la caché. Con gunicorn hay VARIOS procesos y
 # la caché por defecto (memoria) es distinta en cada uno: el límite se multiplicaría. Una caché en

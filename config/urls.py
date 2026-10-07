@@ -14,10 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, re_path, include
+from spaApi.archivos import certificado_protegido, media_publica
 from usuarioApp.views import inicio
 
 urlpatterns = [
@@ -26,8 +25,11 @@ urlpatterns = [
     path('terapeuta/', include('terapeutaApp.urls')),
     path('usuario/', include('usuarioApp.urls')),
     path('api/', include('spaApi.urls')),
+
+    # Archivos subidos (/media/). El ORDEN IMPORTA: la ruta de certificados (privada) va antes que la
+    # pública, y la pública además la bloquea por si alguien intenta rodearla con "..".
+    path('media/terapeutas/certificados/<path:ruta>', certificado_protegido, name='certificado_protegido'),
+    re_path(r'^media/(?P<path>.*)$', media_publica, name='media_publica'),
+
     path('', inicio, name='main'),
 ]
-
-# Sirve los archivos subidos (imágenes y certificados) en desarrollo
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

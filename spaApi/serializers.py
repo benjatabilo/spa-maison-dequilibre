@@ -15,6 +15,7 @@ from terapeutaApp.models import Terapeuta
 from usuarioApp.forms import HORAS_DISPONIBLES
 from usuarioApp.models import Reserva
 from usuarioApp.roles import CLIENTE, obtener_rol
+from .validators import validar_certificado, validar_imagen
 
 
 class TerapiaSerializer(serializers.ModelSerializer):
@@ -24,7 +25,9 @@ class TerapiaSerializer(serializers.ModelSerializer):
         model = Terapia
         fields = ['id', 'nombre', 'precio', 'duracion', 'descripcion', 'imagen', 'creado']
         read_only_fields = ['id', 'creado']      # los pone el servidor, no el cliente
-
+    def validate_imagen(self, archivo):
+        return validar_imagen(archivo, 'Imagen')
+    
     def validate_nombre(self, valor):
         valor = valor.strip()
         if not valor:
@@ -76,6 +79,12 @@ class TerapeutaAdminSerializer(serializers.ModelSerializer):
         if not valor:
             raise serializers.ValidationError('El nombre no puede estar vacío.')
         return valor.title()                       # formato "Abc", igual que en la web
+
+    def validate_foto(self, archivo):
+        return validar_imagen(archivo, 'Foto')
+
+    def validate_certificado(self, archivo):
+        return validar_certificado(archivo)
 
     def validate_correo(self, valor):
         valor = valor.strip().lower()
