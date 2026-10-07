@@ -4,6 +4,8 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 
+from . import documentacion  # (solo carga la documentación de Swagger)
+
 # El router genera solo las rutas del CRUD a partir de los ViewSets
 router = DefaultRouter()
 router.register(r'terapias', views.TerapiaViewSet, basename='terapia')
